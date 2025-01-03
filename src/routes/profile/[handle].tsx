@@ -3,8 +3,7 @@ import { createAsync, useParams } from "@solidjs/router";
 import { batch, Component, createEffect, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
 import { getFollowers, getFollows, getProfile } from "~/agent";
 
-const SuspenseArticle: ParentComponent = props => <article><Suspense fallback={<progress />}>{props.children}</Suspense></article>
-
+const SuspenseProgress: ParentComponent = props => <Suspense fallback={<progress />}>{props.children}</Suspense>
 
 const createCursorReduction = <TRetVal, TAccumulator>(
   fn: (cursor: string | undefined) => Promise<TRetVal>,
@@ -44,8 +43,9 @@ const getDids = (pviews: { did: string }[]) => pviews.map(pview => pview.did)
 
 const ShowRatio: Component<{
   follows?: number,
-  followers?: number
-}> = props => <p>
+  followers?: number,
+  busy?: boolean
+}> = props => <p aria-busy={props.busy}>
   <sup>{props.followers} followers</sup>&frasl;<sub>{props.follows} following</sub> = {
     ((props.followers ?? 0) / (props.follows ?? 1)).toFixed(3)
   } ratio
@@ -79,17 +79,17 @@ export default function Handle() {
   return (
     <>
       <Title>{`@${params.handle}`}</Title>
-      <SuspenseArticle>
+      <article>
         <h2>{`@${params.handle}`}</h2>
         <h5 data-tooltip="what getProfile returns—the value you see on your profile">profile stats</h5>
-        <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
+        <SuspenseProgress>
+          <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount}/>
+        </SuspenseProgress>
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
-        <ShowRatio follows={follows.data().size} followers={followers.data().size} />
-      </SuspenseArticle>
-      <SuspenseArticle>
-        <p>{followers.data().size} followers {followers.isDone() ? "true" : "false"}</p>
-        <p>{follows.data().size} following {follows.isDone() ? "true" : "false"}</p>
-      </SuspenseArticle>
+        <SuspenseProgress>
+          <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())}/>
+        </SuspenseProgress>
+      </article>
     </>
   );
 }
