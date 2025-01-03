@@ -51,6 +51,15 @@ const ShowRatio: Component<{
   } ratio
 </p>
 
+const finiteElse = (num: number | undefined, fallback: number) => Number.isFinite(num) ? num : fallback
+
+const CompletableProgress: Component<{
+  value: number | undefined,
+  max: number | undefined,
+  isDone: boolean
+}> = props =>
+  <progress value={finiteElse(props.isDone ? props.max : props.value, 0)} max={props.max}/>
+
 export default function Handle() {
   const params = useParams<{ handle: string }>()
   const profile = createAsync(() => getProfile({
@@ -88,6 +97,14 @@ export default function Handle() {
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())}/>
+        </SuspenseProgress>
+      </article>
+      <article>
+        <SuspenseProgress>
+          <h6>followers</h6>
+          <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()}/>
+          <h6>following</h6>
+          <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()}/>
         </SuspenseProgress>
       </article>
     </>
