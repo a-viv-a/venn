@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
-import { batch, Component, createEffect, createMemo, createRenderEffect, createSignal, on, ParentComponent, Show, Suspense, untrack } from "solid-js";
+import { Accessor, batch, Component, createEffect, createMemo, createRenderEffect, createSignal, on, ParentComponent, Show, Suspense, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { createStore } from "solid-js/store";
 import { IS_DEVELOPMENT } from "~/mode";
@@ -125,6 +125,10 @@ const createBskyCursor = <TProps, TResponse extends { data: { cursor?: string | 
   (vals) => vals.size >= max
 )
 
+const busy = (...deps: { isDone: Accessor<boolean> }[]) => deps.some(
+  v => !v.isDone()
+)
+
 const ShowRatio: Component<{
   follows?: number,
   followers?: number,
@@ -218,18 +222,18 @@ export default function Handle() {
         </SuspenseProgress>
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
-          <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())} />
-          <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
+          <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={busy(follows, followers)} />
+          <p aria-busy={busy(follows, followers)}>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p>{likes.data().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with @{params.handle}</span> via {likes.data().size} likes on most recent <span
-            data-tooltip="filters to only posts you authored and tries to get 50 of them"
+          <p aria-busy={busy(recentPosts, likes)}>{likes.data().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with @{params.handle}</span> via {likes.data().size} likes on most recent <span
+            data-tooltip={`top level posts ${params.handle} authored`}
           >{recentPosts.data().size} posts</span></p>
         </SuspenseProgress>
       </article>
       <article>
         <SuspenseProgress>
-          <Show when={!(followers.isDone() && follows.isDone() && likes.isDone())}>
+          <Show when={busy(followers, follows, likes)}>
             <h6>followers</h6>
             <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
             <h6>following</h6>
