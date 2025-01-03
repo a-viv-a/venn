@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@atproto/api": "^0.13.24",
+    "@solid-primitives/scheduled": "^1.4.4",
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.0.10",

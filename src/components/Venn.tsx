@@ -2,6 +2,7 @@ import { Component, createEffect } from "solid-js";
 import * as venn from "@upsetjs/venn.js";
 import * as d3 from "d3"
 import styles from "./Venn.module.css"
+import { throttle } from "@solid-primitives/scheduled";
 
 const subsets = <T,>(source: T[]) => function*() {
   for (let n = 1; n < Math.pow(2, source.length); n++) {
@@ -23,6 +24,19 @@ const intersect = <T,>(sets: Set<T>[]) => {
   return intersect(sets)
 }
 
+const computeSets = (data: Record<string, Set<string>>) => {
+  let diagramSets: { sets: string[], size: number }[] = []
+  for (const subset of subsets(Object.entries(data))) {
+    const intersectionSize = intersect(subset.map(([_name, contains]) => contains)).size
+    if (intersectionSize > 0) {
+      diagramSets.push({
+        sets: subset.map(([name, _contains]) => name),
+        size: intersectionSize
+      })
+    }
+  }
+  return diagramSets
+}
 
 const Venn: Component<{
   data: Record<string, Set<string>>
@@ -30,23 +44,10 @@ const Venn: Component<{
   let wrapperRef: HTMLDivElement | undefined
   let tooltipRef: HTMLDivElement | undefined
 
-  const computeSets = () => {
-    let diagramSets: { sets: string[], size: number }[] = []
-    for (const subset of subsets(Object.entries(props.data))) {
-      const intersectionSize = intersect(subset.map(([_name, contains]) => contains)).size
-      if (intersectionSize > 0) {
-        diagramSets.push({
-          sets: subset.map(([name, _contains]) => name),
-          size: intersectionSize
-        })
-      }
-    }
-    return diagramSets
-  }
 
-  createEffect(() => {
+  const render = (sets: ReturnType<typeof computeSets>) => {
     const chart = venn.VennDiagram();
-    const div = d3.select(wrapperRef!).datum(computeSets()).call(chart);
+    const div = d3.select(wrapperRef!).datum(sets).call(chart);
 
     // add a tooltip
     const tooltip = d3.select(tooltipRef!)
@@ -87,6 +88,15 @@ const Venn: Component<{
           .style('fill-opacity', d.sets?.length == 1 ? 0.25 : 0.0)
           .style('stroke-opacity', 0);
       });
+  }
+
+  const triggerRender = throttle((data: typeof props.data) => {
+    const sets = computeSets(data)
+    render(sets)
+  }, 1500)
+
+  createEffect(() => {
+    triggerRender(props.data)
   })
 
 
