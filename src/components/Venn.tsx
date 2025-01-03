@@ -93,7 +93,7 @@ const Venn: Component<{
   const triggerRender = throttle((data: typeof props.data) => {
     const sets = computeSets(data)
     render(sets)
-  }, 1500)
+  }, 750)
 
   createEffect(() => {
     triggerRender(props.data)
