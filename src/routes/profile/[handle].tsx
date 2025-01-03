@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import {clientOnly} from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
-import { batch, Component, createEffect, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
+import { batch, Component, createEffect, createMemo, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
 import { getFollowers, getFollows, getProfile } from "~/agent";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
@@ -89,6 +89,9 @@ export default function Handle() {
     (acc, val) => new Set([...acc, ...getDids(val.data.follows)]),
     new Set<string>()
   )
+
+  const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
+  
   return (
     <>
       <Title>{`@${params.handle}`}</Title>
@@ -101,7 +104,7 @@ export default function Handle() {
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())}/>
-          <p>{(follows.data()).intersection(followers.data()).size} mutuals</p>
+          <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
         </SuspenseProgress>
       </article>
       <article>
