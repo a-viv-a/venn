@@ -85,7 +85,7 @@ const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
       data: merge(acc.data, val.data()),
       isDone: acc.isDone && val.isDone()
     }),
-    {data: initialValue(), isDone: true}
+    { data: initialValue(), isDone: true }
   ))
 
   return {
@@ -94,7 +94,20 @@ const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
   }
 }
 
-const getDids = (pviews: { did: string }[]) => pviews.map(pview => pview.did)
+
+const createBskyCursor = <I, O extends { data: { cursor?: string | undefined } }>(
+  fn: (params: I & { cursor: string | undefined }) => Promise<O>,
+  params: I,
+  extract: (output: O["data"]) => Iterable<string>,
+) => createCursorReduction(
+  (cursor) => fn({
+    ...params,
+    cursor
+  }),
+  v => v?.data.cursor,
+  (acc, val) => new Set([...acc, ...extract(val.data)]),
+  new Set<string>()
+)
 
 const ShowRatio: Component<{
   follows?: number,
@@ -120,26 +133,15 @@ export default function Handle() {
   const profile = createAsync(() => getProfile({
     actor: params.handle
   }))
-  // TODO: should we bother with sets over plain arrays? we probably trust the api to not repeat...
-  const followers = createCursorReduction(
-    (cursor) => getFollowers({
-      actor: params.handle,
-      limit: 100,
-      cursor
-    }),
-    v => v?.data.cursor,
-    (acc, val) => new Set([...acc, ...getDids(val.data.followers)]),
-    new Set<string>()
+  const followers = createBskyCursor(
+    getFollowers,
+    {actor: params.handle, limit: 100},
+    data => data.followers.map(pview => pview.did)
   )
-  const follows = createCursorReduction(
-    (cursor) => getFollows({
-      actor: params.handle,
-      limit: 100,
-      cursor
-    }),
-    v => v?.data.cursor,
-    (acc, val) => new Set([...acc, ...getDids(val.data.follows)]),
-    new Set<string>()
+  const follows = createBskyCursor(
+    getFollows,
+    {actor: params.handle, limit: 100},
+    data => data.follows.map(pview => pview.did)
   )
   const recentPosts = createAsync(async () => {
     const authorFeed = await getAuthorFeed({
