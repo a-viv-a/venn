@@ -14,6 +14,8 @@
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.0.10",
+    "@upsetjs/venn.js": "^1.4.2",
+    "d3": "^7.9.0",
     "solid-js": "^1.9.2",
     "vinxi": "^0.4.3"
   },
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/d3": "^7.4.3",
     "wrangler": "^3.99.0"
   }
 }

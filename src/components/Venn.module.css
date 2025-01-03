@@ -1,0 +1,12 @@
+.venntooltip {
+  position: absolute;
+  text-align: center;
+  background: #333;
+  color: #ddd;
+  padding: 2px;
+  border: 0px;
+  border-radius: 8px;
+  opacity: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}

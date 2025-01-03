@@ -1,7 +1,10 @@
 import { Title } from "@solidjs/meta";
+import {clientOnly} from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
 import { batch, Component, createEffect, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
 import { getFollowers, getFollows, getProfile } from "~/agent";
+
+const Venn = clientOnly(() => import("~/components/Venn"))
 
 const SuspenseProgress: ParentComponent = props => <Suspense fallback={<progress />}>{props.children}</Suspense>
 
@@ -65,6 +68,7 @@ export default function Handle() {
   const profile = createAsync(() => getProfile({
     actor: params.handle
   }))
+  // TODO: should we bother with sets over plain arrays? we probably trust the api to not repeat...
   const followers = createCursorReduction(
     (cursor) => getFollowers({
       actor: params.handle,
@@ -106,6 +110,7 @@ export default function Handle() {
           <h6>following</h6>
           <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()}/>
         </SuspenseProgress>
+        <Venn />
       </article>
     </>
   );
