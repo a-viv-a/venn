@@ -4,24 +4,28 @@ import * as d3 from "d3"
 import styles from "./Venn.module.css"
 
 const Venn: Component = props => {
-  let ref: HTMLDivElement | undefined
+  let wrapperRef: HTMLDivElement | undefined
+  let tooltipRef: HTMLDivElement | undefined
 
   const sets = [
-    { sets: ['A'], size: 12 },
+    { sets: ['A'], size: 6 },
     { sets: ['B'], size: 12 },
     { sets: ['A', 'B'], size: 2 },
   ];
 
   createEffect(() => {
     const chart = venn.VennDiagram();
-    const div = d3.select(ref!).datum(sets).call(chart);
+    const div = d3.select(wrapperRef!).datum(sets).call(chart);
 
     // add a tooltip
-    const tooltip = d3.select("body").append('div').attr('class', styles.venntooltip)
+    const tooltip = d3.select(tooltipRef!)
 
     // add listeners to all the groups to display tooltip on mouseenter
     div
       .selectAll('g')
+      .style("stroke-width", 3)
+      .style("stroke", "rgb(255, 255, 255)")
+      .style("stroke-opacity", 0)
       .on('mouseenter', function(event, d) {
         // sort all the areas relative to the current item
         venn.sortAreas(div, d);
@@ -31,7 +35,6 @@ const Venn: Component = props => {
         tooltip.text(d.size + ' users');
 
         // highlight the current path
-        console.log({d})
         const selection = d3.select(this).transition('tooltip').duration(400);
         selection
           .select('path')
@@ -56,6 +59,8 @@ const Venn: Component = props => {
   })
 
 
-  return <div ref={ref} />
+  return <div ref={wrapperRef} >
+    <div class={styles.venntooltip} ref={tooltipRef}/>
+  </div>
 }
 export default Venn
