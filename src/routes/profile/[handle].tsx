@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
-import {clientOnly} from "@solidjs/start"
+import { clientOnly } from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
-import { batch, Component, createEffect, createMemo, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
+import { batch, Component, createEffect, createMemo, createSignal, ParentComponent, Show, Suspense, untrack } from "solid-js";
 import { getFollowers, getFollows, getProfile } from "~/agent";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
@@ -61,7 +61,7 @@ const CompletableProgress: Component<{
   max: number | undefined,
   isDone: boolean
 }> = props =>
-  <progress value={finiteElse(props.isDone ? props.max : props.value, 0)} max={props.max}/>
+    <progress value={finiteElse(props.isDone ? props.max : props.value, 0)} max={props.max} />
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
@@ -91,7 +91,7 @@ export default function Handle() {
   )
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
-  
+
   return (
     <>
       <Title>{`@${params.handle}`}</Title>
@@ -99,24 +99,26 @@ export default function Handle() {
         <h2>{`@${params.handle}`}</h2>
         <h5 data-tooltip="what getProfile returns—the value you see on your profile">profile stats</h5>
         <SuspenseProgress>
-          <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount}/>
+          <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
         </SuspenseProgress>
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
-          <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())}/>
+          <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())} />
           <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
         </SuspenseProgress>
       </article>
       <article>
         <SuspenseProgress>
-          <h6>followers</h6>
-          <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()}/>
-          <h6>following</h6>
-          <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()}/>
+          <Show when={!(followers.isDone() && follows.isDone())}>
+            <h6>followers</h6>
+            <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
+            <h6>following</h6>
+            <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
+          </Show>
           <Venn data={{
             followers: followers.data(),
             following: follows.data()
-          }}/>
+          }} />
         </SuspenseProgress>
       </article>
     </>
