@@ -137,17 +137,17 @@ export default function Handle() {
       <Title>{`@${params.handle}`}</Title>
       <article>
         <h2>{`@${params.handle}`}</h2>
-        <h5 data-tooltip="what getProfile returns—the value you see on your profile">profile stats</h5>
+        <h5 data-tooltip="what getProfile returns—the value you see when visiting a profile">profile stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
         </SuspenseProgress>
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())} />
-          <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
+          <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p>{likes().data.size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with you</span> via {likes().data.size} likes on your most recent <span
+          <p>{likes().data.size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with @{params.handle}</span> via {likes().data.size} likes on most recent <span
             data-tooltip="take most recent 100 posts/reposts, filters to only posts, and limits to 30"
             >{recentPosts()?.length ?? "..."} posts</span></p>
         </SuspenseProgress>
