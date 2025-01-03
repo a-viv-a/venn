@@ -102,6 +102,8 @@ export default function Handle() {
       .filter(post => post.author.handle === params.handle)
       .map(post => post.uri)
 
+    postUris.length = Math.min(postUris.length, 30)
+
     return postUris
   })
   const [likesCursorStore, setLikesCursorStore] = createStore<ReturnType<typeof createCursorReduction<ReturnType<typeof getLikes>, Set<string>>>[]>([])
@@ -144,6 +146,11 @@ export default function Handle() {
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())} />
           <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
         </SuspenseProgress>
+        <SuspenseProgress>
+          <p>{likes().data.size} unique users <span data-tooltip="union of actors for all engagement metrics">engaged with you</span> via {likes().data.size} likes on your most recent <span
+            data-tooltip="take most recent 100 posts/reposts, filters to only posts, and limits to 30"
+            >{recentPosts()?.length ?? "..."} posts</span></p>
+        </SuspenseProgress>
       </article>
       <article>
         <SuspenseProgress>
@@ -158,7 +165,7 @@ export default function Handle() {
           <Venn data={{
             followers: followers.data(),
             following: follows.data(),
-            "engaged w you": likes().data
+            "engaged w user": likes().data
           }} />
         </SuspenseProgress>
       </article>
