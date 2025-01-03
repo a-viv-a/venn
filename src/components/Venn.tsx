@@ -41,7 +41,7 @@ const Venn: Component = props => {
       })
 
       .on('mousemove', function(event) {
-        tooltip.style('left', event.pageX + 'px').style('top', event.pageY - 28 - 10 + 'px');
+        tooltip.style('left', event.pageX + 'px').style('top', event.pageY - 50 + 'px');
       })
 
       .on('mouseleave', function(event, d) {

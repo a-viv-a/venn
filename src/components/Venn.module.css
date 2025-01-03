@@ -1,12 +1,23 @@
 .venntooltip {
   position: absolute;
   text-align: center;
-  background: #333;
-  color: #ddd;
-  padding: 2px;
-  border: 0px;
-  border-radius: 8px;
+  /* background: #333; */
+  /* color: #ddd; */
+  /* padding: 2px; */
+  /* border: 0px; */
+  /* border-radius: 8px; */
   opacity: 0;
   user-select: none;
   -webkit-user-select: none;
+
+  
+  padding: .25rem .5rem;
+  overflow: hidden;
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-tooltip-background-color);
+  content: attr(data-tooltip);
+  color: var(--pico-tooltip-color);
+  font-style: normal;
+  font-weight: var(--pico-font-weight);
+  font-size: .875rem;
 }
