@@ -1,8 +1,9 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
-import { batch, Component, createEffect, createMemo, createSignal, ParentComponent, Show, Suspense, untrack } from "solid-js";
-import { getFollowers, getFollows, getProfile } from "~/agent";
+import { batch, Component, createEffect, createMemo, createRenderEffect, createSignal, ParentComponent, Show, Suspense, untrack } from "solid-js";
+import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
+import { createStore } from "solid-js/store";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -89,6 +90,43 @@ export default function Handle() {
     (acc, val) => new Set([...acc, ...getDids(val.data.follows)]),
     new Set<string>()
   )
+  const recentPosts = createAsync(async () => {
+    const authorFeed = await getAuthorFeed({
+      actor: params.handle,
+      limit: 100,
+      filter: "posts_no_replies",
+    })
+    // uris of recent posts made by this handle
+    const postUris = authorFeed.data.feed
+      .map(fvPost => fvPost.post)
+      .filter(post => post.author.handle === params.handle)
+      .map(post => post.uri)
+
+    return postUris
+  })
+  const [likesCursorStore, setLikesCursorStore] = createStore<ReturnType<typeof createCursorReduction<ReturnType<typeof getLikes>, Set<string>>>[]>([])
+  createRenderEffect(() => {
+    const recentPostsVal = recentPosts()
+    if (recentPostsVal === undefined) return
+    
+    setLikesCursorStore(recentPostsVal.map(postUri => createCursorReduction(
+      (cursor) => getLikes({
+        uri: postUri,
+        limit: 100,
+        cursor
+      }),
+      v => v?.data.cursor,
+      (acc, val) => new Set([...acc, ...val.data.likes.map(like => like.actor.did)]),
+      new Set<string>()
+    )))
+  })
+  const likes = createMemo(() => likesCursorStore.reduce(
+    (acc, v) => ({
+      data: acc.data.union(v.data()),
+      isDone: acc.isDone && v.isDone()
+    }),
+    { data: new Set<string>(), isDone: true }
+  ))
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
 
@@ -109,15 +147,18 @@ export default function Handle() {
       </article>
       <article>
         <SuspenseProgress>
-          <Show when={!(followers.isDone() && follows.isDone())}>
+          <Show when={!(followers.isDone() && follows.isDone() && likes().isDone)}>
             <h6>followers</h6>
             <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
             <h6>following</h6>
             <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
+            <h6>engaged with you</h6>
+            <progress />
           </Show>
           <Venn data={{
             followers: followers.data(),
-            following: follows.data()
+            following: follows.data(),
+            "engaged w you": likes().data
           }} />
         </SuspenseProgress>
       </article>

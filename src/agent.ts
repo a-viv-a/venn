@@ -9,7 +9,23 @@ seroval isn't able to serialize classes, so this HOF spreads the returned promis
 const spreadret = <A extends unknown[], O>(f: (...args: A) => Promise<O>) => async (...args: A) => ({
   ...await f(...args)
 })
+const spreadretrec = <A extends unknown[], O extends object>(f: (...args: A) => Promise<O>) => async (...args: A) => {
+  const spread = <V>(v: V): V =>
+    Array.isArray(v)
+      ? v.map(keymap) as V
+      : typeof v === "object" && v !== null
+        ? keymap(v)
+        : v
+
+  const keymap = <T extends object>(obj: T): T => Object.fromEntries(
+    Object.entries(obj)
+      .map(([k, v]) => ([k, spread(v)]))
+  ) as T
+  return spread(await f(...args))
+}
 
 export const getProfile = query(spreadret(agent.getProfile), "agent.getProfile")
 export const getFollows = query(spreadret(agent.getFollows), "agent.getFollows")
 export const getFollowers = query(spreadret(agent.getFollowers), "agent.getFollowers")
+export const getLikes = query(spreadret(agent.getLikes), "agent.getLikes")
+export const getAuthorFeed = query(spreadretrec(agent.getAuthorFeed), "agent.getAuthorFeed")
