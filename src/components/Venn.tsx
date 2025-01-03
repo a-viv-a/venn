@@ -3,19 +3,50 @@ import * as venn from "@upsetjs/venn.js";
 import * as d3 from "d3"
 import styles from "./Venn.module.css"
 
-const Venn: Component = props => {
+const subsets = <T,>(source: T[]) => function*() {
+  for (let n = 1; n < Math.pow(2, source.length); n++) {
+    let subset: T[] = []
+    for (let i = 0; i < source.length; i++) {
+      if ((1 << i) & n) {
+        subset.push(source[i])
+      }
+    }
+    yield subset
+  }
+}()
+
+const intersect = <T,>(sets: Set<T>[]) => {
+  if (sets.length < 2) return sets[0]
+  const newSet = sets.pop()!.intersection(sets.pop()!)
+  if (newSet.size === 0) return newSet
+  sets.push(newSet)
+  return intersect(sets)
+}
+
+
+const Venn: Component<{
+  data: Record<string, Set<string>>
+}> = props => {
   let wrapperRef: HTMLDivElement | undefined
   let tooltipRef: HTMLDivElement | undefined
 
-  const sets = [
-    { sets: ['A'], size: 6 },
-    { sets: ['B'], size: 12 },
-    { sets: ['A', 'B'], size: 2 },
-  ];
+  const computeSets = () => {
+    let diagramSets: { sets: string[], size: number }[] = []
+    for (const subset of subsets(Object.entries(props.data))) {
+      const intersectionSize = intersect(subset.map(([_name, contains]) => contains)).size
+      if (intersectionSize > 0) {
+        diagramSets.push({
+          sets: subset.map(([name, _contains]) => name),
+          size: intersectionSize
+        })
+      }
+    }
+    return diagramSets
+  }
 
   createEffect(() => {
     const chart = venn.VennDiagram();
-    const div = d3.select(wrapperRef!).datum(sets).call(chart);
+    const div = d3.select(wrapperRef!).datum(computeSets()).call(chart);
 
     // add a tooltip
     const tooltip = d3.select(tooltipRef!)
@@ -60,7 +91,7 @@ const Venn: Component = props => {
 
 
   return <div ref={wrapperRef} >
-    <div class={styles.venntooltip} ref={tooltipRef}/>
+    <div class={styles.venntooltip} ref={tooltipRef} />
   </div>
 }
 export default Venn

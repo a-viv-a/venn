@@ -101,6 +101,7 @@ export default function Handle() {
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())}/>
+          <p>{(follows.data()).intersection(followers.data()).size} mutuals</p>
         </SuspenseProgress>
       </article>
       <article>
@@ -109,8 +110,11 @@ export default function Handle() {
           <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()}/>
           <h6>following</h6>
           <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()}/>
+          <Venn data={{
+            followers: followers.data(),
+            following: follows.data()
+          }}/>
         </SuspenseProgress>
-        <Venn />
       </article>
     </>
   );
