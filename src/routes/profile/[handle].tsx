@@ -4,6 +4,7 @@ import { createAsync, useParams } from "@solidjs/router";
 import { batch, Component, createEffect, createMemo, createRenderEffect, createSignal, ParentComponent, Show, Suspense, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { createStore } from "solid-js/store";
+import { IS_DEVELOPMENT } from "~/mode";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -40,6 +41,56 @@ const createCursorReduction = <TRetVal, TAccumulator>(
   return {
     data: accumulator,
     isDone
+  }
+}
+
+
+const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
+  source: ReturnType<typeof createCursorReduction<unknown, Iterable<TInput>>>,
+  extractKey: (value: TInput) => string,
+  map: (input: TInput, cursor: string | undefined) => Promise<TOutput>,
+  extractCursor: (value: TOutput | undefined) => string | undefined,
+  reducer: (previous: TAccumulator, currentValue: TOutput) => TAccumulator,
+  initialValue: () => TAccumulator,
+  merge: (a: TAccumulator, b: TAccumulator) => TAccumulator
+) => {
+
+  const [derivationCursorStore, setDerivationCursorStore] = createStore({} as Record<string, ReturnType<typeof createCursorReduction<TOutput, TAccumulator>>>)
+
+  createRenderEffect(() => {
+    const sourceData = source.data()
+
+    const kv = Array.from(sourceData).map(data => [extractKey(data), data] as const)
+    if (IS_DEVELOPMENT && kv.length !== new Set(kv.map(([key]) => key)).size)
+      throw new Error("invarient violation: key function produced duplicate keys")
+
+    const newKeys = kv.filter(([key]) => derivationCursorStore.hasOwnProperty(key))
+    // TODO: object.fromentries for performance?
+    batch(() => {
+      for (const [key, input] of newKeys) {
+        const cursorReduction = createCursorReduction(
+          (cursor) => map(input, cursor),
+          extractCursor,
+          reducer,
+          initialValue()
+        )
+        setDerivationCursorStore({ [key]: cursorReduction })
+      }
+    })
+
+  })
+
+  const internalMemo = createMemo(() => Object.values(derivationCursorStore).reduce(
+    (acc, val) => ({
+      data: merge(acc.data, val.data()),
+      isDone: acc.isDone && val.isDone()
+    }),
+    {data: initialValue(), isDone: true}
+  ))
+
+  return {
+    data: () => internalMemo().data,
+    isDone: () => internalMemo().isDone
   }
 }
 
