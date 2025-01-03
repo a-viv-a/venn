@@ -18,8 +18,8 @@ const createCursorReduction = <TRetVal, TAccumulator>(
   createEffect(() => {
     const partialValue = partial()
     const newCursor = extractCursor(partialValue)
-    console.log({ oldCursor: untrack(cursor), newCursor: newCursor })
-    console.log("effect", partialValue)
+    // console.log({ oldCursor: untrack(cursor), newCursor: newCursor })
+    // console.log("effect", partialValue)
     batch(() => {
       if (partialValue !== undefined) {
         setAccumulator(previous => reducer(previous, partialValue))
