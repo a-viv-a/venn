@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { createAsync, useParams } from "@solidjs/router";
-import { batch, createEffect, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
+import { batch, Component, createEffect, createSignal, ParentComponent, Suspense, untrack } from "solid-js";
 import { getFollowers, getFollows, getProfile } from "~/agent";
 
 const SuspenseArticle: ParentComponent = props => <article><Suspense fallback={<progress />}>{props.children}</Suspense></article>
@@ -42,6 +42,14 @@ const createCursorReduction = <TRetVal, TAccumulator>(
 
 const getDids = (pviews: { did: string }[]) => pviews.map(pview => pview.did)
 
+const ShowRatio: Component<{
+  follows?: number,
+  followers?: number
+}> = props => <p>
+  <sup>{props.followers} followers</sup>&frasl;<sub>{props.follows} following</sub> = {
+    ((props.followers ?? 0) / (props.follows ?? 1)).toFixed(3)
+  } ratio
+</p>
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
@@ -73,9 +81,10 @@ export default function Handle() {
       <Title>{`@${params.handle}`}</Title>
       <SuspenseArticle>
         <h2>{`@${params.handle}`}</h2>
-        <sup>{profile()?.data.followersCount} followers</sup>&frasl;<sub>{profile()?.data.followsCount} following</sub> = {
-          ((profile()?.data.followersCount ?? 0) / (profile()?.data.followsCount ?? 1)).toFixed(3)
-        } ratio
+        <h5 data-tooltip="what getProfile returns—the value you see on your profile">profile stats</h5>
+        <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
+        <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
+        <ShowRatio follows={follows.data().size} followers={followers.data().size} />
       </SuspenseArticle>
       <SuspenseArticle>
         <p>{followers.data().size} followers {followers.isDone() ? "true" : "false"}</p>
