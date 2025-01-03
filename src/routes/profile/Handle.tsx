@@ -1,0 +1,118 @@
+import { Title } from "@solidjs/meta";
+import { useParams, createAsync } from "@solidjs/router";
+import { createRenderEffect, createMemo, ErrorBoundary, Show } from "solid-js";
+import { createStore } from "solid-js/store";
+import { getProfile, getFollowers, getFollows, getAuthorFeed, getLikes } from "~/agent";
+import { createCursorReduction, getDids, undefined, SuspenseProgress, ShowRatio, CompletableProgress, Venn } from "./[handle]";
+
+
+export default function Handle() {
+  const params = useParams<{ handle: string; }>();
+  const profile = createAsync(() => getProfile({
+    actor: params.handle
+  }));
+  // TODO: should we bother with sets over plain arrays? we probably trust the api to not repeat...
+  const followers = createCursorReduction(
+    (cursor) => getFollowers({
+      actor: params.handle,
+      limit: 100,
+      cursor
+    }),
+    v => v?.data.cursor,
+    (acc, val) => new Set([...acc, ...getDids(val.data.followers)]),
+    new Set<string>()
+  );
+  const follows = createCursorReduction(
+    (cursor) => getFollows({
+      actor: params.handle,
+      limit: 100,
+      cursor
+    }),
+    v => v?.data.cursor,
+    (acc, val) => new Set([...acc, ...getDids(val.data.follows)]),
+    new Set<string>()
+  );
+  const recentPosts = createAsync(async () => {
+    const authorFeed = await getAuthorFeed({
+      actor: params.handle,
+      limit: 100,
+      filter: "posts_no_replies",
+    });
+    // uris of recent posts made by this handle
+    const postUris = authorFeed.data.feed
+      .map(fvPost => fvPost.post)
+      .filter(post => post.author.handle === params.handle);
+
+    postUris.length = Math.min(postUris.length, 30);
+
+    return postUris;
+  });
+  const [likesCursorStore, setLikesCursorStore] = createStore<ReturnType<typeof createCursorReduction<ReturnType<typeof getLikes>, Set<string>>>[]>([]);
+  createRenderEffect(() => {
+    const recentPostsVal = recentPosts();
+    if (recentPostsVal === undefined) return;
+
+    setLikesCursorStore(recentPostsVal.map(post => createCursorReduction(
+      (cursor) => getLikes({
+        uri: post.uri,
+        limit: 100,
+        cursor
+      }),
+      v => v?.data.cursor,
+      (acc, val) => new Set([...acc, ...val.data.likes.map(like => like.actor.did)]),
+      new Set<string>()
+    )));
+  });
+  const maxLikes = createMemo(() => recentPosts()?.reduce((acc, post) => acc + (post.likeCount ?? 0), 0));
+  const likes = createMemo(() => likesCursorStore.reduce(
+    (acc, v) => ({
+      data: acc.data.union(v.data()),
+      isDone: acc.isDone && v.isDone()
+    }),
+    { data: new Set<string>(), isDone: true }
+  ));
+
+  const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size);
+
+  return (
+    <>
+      <Title>{`@${params.handle}`}</Title>
+      <ErrorBoundary>
+        <article>
+          <h2>{`@${params.handle}`}</h2>
+          <h5 data-tooltip="what getProfile returns—the value you see on your profile">profile stats</h5>
+          <SuspenseProgress>
+            <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
+          </SuspenseProgress>
+          <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
+          <SuspenseProgress>
+            <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={!(followers.isDone() && follows.isDone())} />
+            <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
+          </SuspenseProgress>
+          <SuspenseProgress>
+            <p>{likes().data.size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with you</span> via {likes().data.size} likes on your most recent <span
+              data-tooltip="take most recent 100 posts/reposts, filters to only posts, and limits to 30"
+            >{recentPosts()?.length ?? "..."} posts</span></p>
+          </SuspenseProgress>
+        </article>
+        <article>
+          <SuspenseProgress>
+            <Show when={!(followers.isDone() && follows.isDone() && likes().isDone)}>
+              <h6>followers</h6>
+              <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
+              <h6>following</h6>
+              <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
+              <h6>engaged with you</h6>
+              <CompletableProgress value={likes().data.size} max={maxLikes()} isDone={likes().isDone} />
+            </Show>
+            <Venn data={{
+              followers: followers.data(),
+              following: follows.data(),
+              "engaged w user": likes().data
+            }} />
+          </SuspenseProgress>
+        </article>
+      </ErrorBoundary>
+    </>
+  );
+}

@@ -100,7 +100,6 @@ export default function Handle() {
     const postUris = authorFeed.data.feed
       .map(fvPost => fvPost.post)
       .filter(post => post.author.handle === params.handle)
-      .map(post => post.uri)
 
     postUris.length = Math.min(postUris.length, 30)
 
@@ -111,9 +110,9 @@ export default function Handle() {
     const recentPostsVal = recentPosts()
     if (recentPostsVal === undefined) return
     
-    setLikesCursorStore(recentPostsVal.map(postUri => createCursorReduction(
+    setLikesCursorStore(recentPostsVal.map(post=> createCursorReduction(
       (cursor) => getLikes({
-        uri: postUri,
+        uri: post.uri,
         limit: 100,
         cursor
       }),
@@ -122,6 +121,7 @@ export default function Handle() {
       new Set<string>()
     )))
   })
+  const maxLikes = createMemo(() => recentPosts()?.reduce((acc, post) => acc + (post.likeCount ?? 0), 0))
   const likes = createMemo(() => likesCursorStore.reduce(
     (acc, v) => ({
       data: acc.data.union(v.data()),
@@ -147,7 +147,7 @@ export default function Handle() {
           <p>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p>{likes().data.size} unique users <span data-tooltip="union of actors for all engagement metrics">engaged with you</span> via {likes().data.size} likes on your most recent <span
+          <p>{likes().data.size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with you</span> via {likes().data.size} likes on your most recent <span
             data-tooltip="take most recent 100 posts/reposts, filters to only posts, and limits to 30"
             >{recentPosts()?.length ?? "..."} posts</span></p>
         </SuspenseProgress>
@@ -160,7 +160,7 @@ export default function Handle() {
             <h6>following</h6>
             <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
             <h6>engaged with you</h6>
-            <progress />
+            <CompletableProgress value={likes().data.size} max={maxLikes()} isDone={likes().isDone} />
           </Show>
           <Venn data={{
             followers: followers.data(),
