@@ -109,8 +109,9 @@ export default function Handle() {
   createRenderEffect(() => {
     const recentPostsVal = recentPosts()
     if (recentPostsVal === undefined) return
-    
-    setLikesCursorStore(recentPostsVal.map(post=> createCursorReduction(
+    if (untrack(() => likesCursorStore.length > 0)) throw new Error(`illegal state; recent posts changed after first fetch`)
+
+    setLikesCursorStore(recentPostsVal.map(post => createCursorReduction(
       (cursor) => getLikes({
         uri: post.uri,
         limit: 100,
@@ -149,7 +150,7 @@ export default function Handle() {
         <SuspenseProgress>
           <p>{likes().data.size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with @{params.handle}</span> via {likes().data.size} likes on most recent <span
             data-tooltip="take most recent 100 posts/reposts, filters to only posts, and limits to 30"
-            >{recentPosts()?.length ?? "..."} posts</span></p>
+          >{recentPosts()?.length ?? "..."} posts</span></p>
         </SuspenseProgress>
       </article>
       <article>
