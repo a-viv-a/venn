@@ -189,31 +189,6 @@ export default function Handle() {
     (a, b) => a.union(b)
   )
 
-  // const [likesCursorStore, setLikesCursorStore] = createStore<ReturnType<typeof createCursorReduction<ReturnType<typeof getLikes>, Set<string>>>[]>([])
-  // createRenderEffect(() => {
-  //   const recentPostsVal = recentPosts.data()
-  //   if (recentPostsVal === undefined) return
-  //   // if (untrack(() => likesCursorStore.length > 0)) throw new Error(`illegal state; recent posts changed after first fetch`)
-  //   if (untrack(() => likesCursorStore.length > 0)) return
-
-  //   setLikesCursorStore(Array.from(recentPostsVal).map(post => createCursorReduction(
-  //     (cursor) => getLikes({
-  //       uri: post.uri,
-  //       limit: 100,
-  //       cursor
-  //     }),
-  //     v => v?.data.cursor,
-  //     (acc, val) => new Set([...acc, ...val.data.likes.map(like => like.actor.did)]),
-  //     new Set<string>()
-  //   )))
-  // })
-  // const likes = createMemo(() => likesCursorStore.reduce(
-  //   (acc, v) => ({
-  //     data: acc.data.union(v.data()),
-  //     isDone: acc.isDone && v.isDone()
-  //   }),
-  //   { data: new Set<string>(), isDone: true }
-  // ))
   const maxLikes = createMemo(() => Array.from(recentPosts.data()).reduce((acc, post) => acc + (post.likeCount ?? 0), 0))
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
