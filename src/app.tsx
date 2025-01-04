@@ -3,6 +3,7 @@ import { A, Router, useNavigate } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Component, ErrorBoundary, ParentComponent, Show, Suspense } from "solid-js";
 import "./pico.violet.min.css"
+import "./app.css"
 import { narrow } from "./utils";
 import { IS_PRODUCTION } from "./mode";
 

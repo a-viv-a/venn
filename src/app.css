@@ -1,0 +1,9 @@
+[role=group].even {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--pico-spacing);
+  &>* {
+    flex-grow: 0;
+  }
+}

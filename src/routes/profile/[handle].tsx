@@ -1,18 +1,19 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
-import { createAsync, useParams } from "@solidjs/router";
+import { A, createAsync, useParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
 import { GetSetType, KeysOfType } from "~/utils";
-import { isBlockedPost, isThreadViewPost } from "@atproto/api/dist/client/types/app/bsky/feed/defs";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
+const CurrentUrl = clientOnly(() => import("~/components/CurrentUrl"))
+
 export default function Handle() {
   const params = useParams<{ handle: string }>()
 
-  const [showEngagement, setShowEngagement] = createSignal(true)
+  const [showLikes, setShowLikes] = createSignal(true)
   const [seperateEngagement, setSeperateEngagement] = createSignal(false)
 
   const [showDiagram, setShowDiagram] = createSignal(true)
@@ -40,7 +41,7 @@ export default function Handle() {
     getAuthorFeed,
     { actor: params.handle, limit: 100, filter: "posts_no_replies" },
     data => data.feed.map(fvPost => fvPost.post),
-    100,
+    50,
     // TODO: can people swap handles and cause issues for this? using did creates a waterfall on profile lookup
     post => post.author.handle === params.handle
   )
@@ -59,32 +60,18 @@ export default function Handle() {
   )
   const maxLikes = sumForMaxValue("likeCount")
 
-  const replies = createCursorMappingReduction(
-    recentPosts,
-    post => post.uri,
-    (post, _cursor) => getPostThread({ uri: post.uri, depth: 1, parentHeight: 0 }),
-    // TODO: explore not abusing the wrapper like this... no pagination for this api
-    (v) => undefined,
-    (acc, val) => isThreadViewPost(val.data.thread)
-      ? acc.union(new Set(
-        (val.data.thread.replies ?? [])
-          .filter(p => isThreadViewPost(p) || isBlockedPost(p))
-          .map(p => isThreadViewPost(p) ? p.post.author.did : p.author.did)
-      ))
-      : acc,
-    () => new Set<string>(),
-    (a, b) => a.union(b)
-  )
-  const maxReplies = sumForMaxValue("replyCount")
-
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
-  const engagement = createMemo(() => likes.data().union(replies.data()))
+  const engagement = likes.data
 
   return (
     <>
       <Title>{`@${params.handle}`}</Title>
       <article>
-        <h2>{`@${params.handle}`}</h2>
+        <div role="group" class="even">
+          <h2>{`@${params.handle}`}</h2>
+          <CurrentUrl />
+          <p><small>made w/ ❤️ by <A target="_blank" href="https://bsky.app/profile/aviva.gay">@aviva.gay</A></small></p>
+        </div>
         <h5 data-tooltip="what getProfile returns—the value you see when visiting a profile">profile stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={profile()?.data.followsCount} followers={profile()?.data.followersCount} />
@@ -95,8 +82,8 @@ export default function Handle() {
           <p aria-busy={busy(follows, followers)}>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p aria-busy={busy(recentPosts, likes, replies)}>{engagement().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
-            engaged with @{params.handle}</span> via {likes.data().size} likes and {replies.data().size} top level replies on most recent <span
+          <p aria-busy={busy(recentPosts, likes)}>{engagement().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
+            engaged with @{params.handle}</span> via likes on most recent <span
               data-tooltip={`top level posts ${params.handle} authored`}
             >{recentPosts.data().size} posts</span></p>
         </SuspenseProgress>
@@ -108,9 +95,8 @@ export default function Handle() {
             <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
             <h6>following</h6>
             <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
-            <h6>engagement <small><small>likes, replies</small></small></h6>
+            <h6>likes on posts</h6>
             <CompletableProgress value={likes.data().size} max={maxLikes()} isDone={likes.isDone()} />
-            <CompletableProgress value={replies.data().size} max={maxReplies()} isDone={replies.isDone()} />
           </Show>
           <Show when={showDiagram()}>
             <Venn data={{
@@ -119,17 +105,11 @@ export default function Handle() {
                 following: follows.data(),
               },
               ...(
-                !showEngagement()
+                !showLikes()
                   ? {}
-                  : seperateEngagement()
-                    ? {
-                      "liked": likes.data(),
-                      "replied": replies.data()
-                    }
-                    : {
-                      "engaged": engagement()
-                    }
-              )
+                  : {
+                    "likes": likes.data(),
+                  })
             }} onFinishRender={() => {
               if (untrack(rendering)) setRendering(false)
             }} />
@@ -140,12 +120,8 @@ export default function Handle() {
         <h2>config</h2>
         <fieldset>
           <label>
-            <input name="showEngagement" type="checkbox" role="switch" checked={showEngagement()} onChange={e => setShowEngagement(e.currentTarget.checked)} />
-            display engagement in venn diagram
-          </label>
-          <label>
-            <input name="seperateEngagementTypes" type="checkbox" role="switch" disabled={!showEngagement()} checked={seperateEngagement()} onChange={e => setSeperateEngagement(e.currentTarget.checked)} />
-            display types of engagement seperately
+            <input name="showLikes" type="checkbox" role="switch" checked={showLikes()} onChange={e => setShowLikes(e.currentTarget.checked)} />
+            display likes in venn diagram
           </label>
           <button class="secondary" aria-busy={rendering()} onClick={() => batch(() => {
             setShowDiagram(false)
