@@ -131,7 +131,7 @@ export default function Handle() {
                     }
               )
             }} onFinishRender={() => {
-              if (!untrack(showDiagram)) setShowDiagram(true)
+              if (!untrack(rendering)) setRendering(false)
             }} />
           </Show>
         </SuspenseProgress>
