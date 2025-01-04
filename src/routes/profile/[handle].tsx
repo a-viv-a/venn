@@ -131,7 +131,7 @@ export default function Handle() {
                     }
               )
             }} onFinishRender={() => {
-              if (!untrack(rendering)) setRendering(false)
+              if (untrack(rendering)) setRendering(false)
             }} />
           </Show>
         </SuspenseProgress>
