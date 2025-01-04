@@ -1,4 +1,5 @@
 import { Accessor } from "solid-js"
+import { IS_DEVELOPMENT } from "./mode"
 
 export const narrow = <A, B extends A>(accessor: Accessor<A>, guard: (v: A) => v is B): B | null => {
   const val = accessor()
@@ -7,3 +8,28 @@ export const narrow = <A, B extends A>(accessor: Accessor<A>, guard: (v: A) => v
   }
   return null
 }
+
+const dbgStore = new Map()
+const makeDbg = (ctx: unknown = undefined, showCtx = false) => IS_DEVELOPMENT ? new Proxy({} as Record<string | symbol, unknown>, {
+  set:
+    (obj, prop, value) => {
+      const key = `${String(prop)} = ${value}`
+      if (obj[key] === undefined)
+        obj[key] = 0
+      const seen = ++(obj[key] as number)
+      if (!showCtx)
+        console.log({ [prop]: value, details: { seen } })
+      else
+        console.log({ [prop]: value, details: { ctx, seen } })
+      return true
+    }
+}) : null!
+export const dbgIn = (ctx: unknown) => {
+  let dbg = dbgStore.get(ctx)
+  if (dbg === undefined) {
+    dbg = makeDbg(ctx, true)
+    dbgStore.set(ctx, dbg)
+  }
+  return dbg
+}
+export const dbg = makeDbg()

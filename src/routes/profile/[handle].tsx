@@ -4,7 +4,6 @@ import { createAsync, useParams } from "@solidjs/router";
 import { Accessor, batch, Component, createEffect, createMemo, createRenderEffect, createSignal, on, ParentComponent, Show, Suspense, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { createStore } from "solid-js/store";
-import { IS_DEVELOPMENT } from "~/mode";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -15,7 +14,7 @@ const SuspenseProgress: ParentComponent = props => <Suspense fallback={<progress
 
 const createCursorReduction = <TRetVal, TAccumulator>(
   fn: (cursor: string | undefined) => Promise<TRetVal>,
-  extractCursor: (value: TRetVal | undefined) => string | undefined,
+  extractCursor: (value: TRetVal) => string | undefined,
   reducer: (previous: TAccumulator, currentValue: TRetVal) => TAccumulator,
   initialValue: TAccumulator,
   terminate: (value: TAccumulator) => boolean = () => false
@@ -26,7 +25,9 @@ const createCursorReduction = <TRetVal, TAccumulator>(
   const partial = createAsync(() => fn(cursor()))
   createEffect(() => {
     const partialValue = partial()
-    const newCursor = extractCursor(partialValue)
+    const newCursor = partialValue !== undefined
+      ? extractCursor(partialValue)
+      : undefined
     // console.log({ oldCursor: untrack(cursor), newCursor: newCursor })
     // console.log("effect", partialValue)
     batch(() => {
@@ -57,7 +58,7 @@ const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
   source: ReturnType<typeof createCursorReduction<unknown, Iterable<TInput>>>,
   extractKey: (value: TInput) => string,
   map: (input: TInput, cursor: string | undefined) => Promise<TOutput>,
-  extractCursor: (value: TOutput | undefined) => string | undefined,
+  extractCursor: (value: TOutput) => string | undefined,
   reducer: (previous: TAccumulator, currentValue: TOutput) => TAccumulator,
   initialValue: () => TAccumulator,
   merge: (a: TAccumulator, b: TAccumulator) => TAccumulator
@@ -65,12 +66,14 @@ const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
 
   const [derivationCursorStore, setDerivationCursorStore] = createStore({} as Record<string, ReturnType<typeof createCursorReduction<TOutput, TAccumulator>>>)
 
-  createRenderEffect(on(source.data, (sourceData) => {
-    const kv = Array.from(sourceData).map(data => [extractKey(data), data] as const)
-    if (IS_DEVELOPMENT && kv.length !== new Set(kv.map(([key]) => key)).size)
-      throw new Error("invarient violation: key function produced duplicate keys")
+  createRenderEffect(() => {
+    const sourceData = source.data()
+    // map remembers insertion order
+    // source data is new to old, so by reversing old data will be overwritten by new data if keys match
+    const kv = new Map(Array.from(sourceData).map(data => [extractKey(data), data] as const).reverse())
 
-    const newKeys = kv.filter(([key]) => !derivationCursorStore.hasOwnProperty(key))
+    // un reverse!
+    const newKeys = Array.from(kv.entries()).reverse().filter(([key]) => !derivationCursorStore.hasOwnProperty(key))
     // TODO: object.fromentries for performance?
     batch(() => {
       for (const [key, input] of newKeys) {
@@ -84,7 +87,7 @@ const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
       }
     })
 
-  }))
+  })
 
   const internalMemo = createMemo(() => Object.values(derivationCursorStore).reduce(
     (acc, val) => ({
@@ -116,10 +119,13 @@ const createBskyCursor = <TProps, TResponse extends { data: { cursor?: string | 
   v => v?.data.cursor,
   (acc, val) => {
     const newVals = Array.from(extract(val.data)).filter(predicate)
-    // don't add more than the max elements!
-    newVals.length = Math.min(newVals.length, max - (acc.size))
-    // TODO: is this a performance issue (doubt it)
-    return acc.union(new Set(newVals))
+    const newSet = new Set(acc)
+    // we can't just trim newvals and take the union—they may not be disjoint, and then we will skip values!
+    while (newSet.size < max && newVals.length > 0) {
+      // we need to take off the front to maintain ordering—v8 is clever, this isn't actually that expensive
+      newSet.add(newVals.shift()!)
+    }
+    return newSet
   },
   new Set<TAccumulateValue>(),
   (vals) => vals.size >= max
@@ -168,7 +174,7 @@ export default function Handle() {
     getAuthorFeed,
     { actor: params.handle, limit: 100, filter: "posts_no_replies" },
     data => data.feed.map(fvPost => fvPost.post),
-    30,
+    100,
     // TODO: can people swap handles and cause issues for this? using did creates a waterfall on profile lookup
     post => post.author.handle === params.handle
   )
@@ -176,12 +182,13 @@ export default function Handle() {
   const likes = createCursorMappingReduction(
     recentPosts,
     post => post.uri,
-    (post, cursor) => getLikes({ uri: post.uri, limit: 100 }),
+    (post, cursor) => getLikes({ uri: post.uri, limit: 100, cursor }),
     (v) => v?.data.cursor,
     (acc, val) => acc.union(new Set(val.data.likes.map(like => like.actor.did))),
     () => new Set<string>(),
     (a, b) => a.union(b)
   )
+
   // const [likesCursorStore, setLikesCursorStore] = createStore<ReturnType<typeof createCursorReduction<ReturnType<typeof getLikes>, Set<string>>>[]>([])
   // createRenderEffect(() => {
   //   const recentPostsVal = recentPosts.data()
