@@ -47,6 +47,7 @@ const Venn: Component<{
 
   const render = (sets: ReturnType<typeof computeSets>) => {
     const chart = venn.VennDiagram();
+    // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
     const div = d3.select(wrapperRef!).datum(sets).call(chart);
 
     // add a tooltip
@@ -60,10 +61,12 @@ const Venn: Component<{
       .style("stroke-opacity", 0)
       .on('mouseenter', function(event, d) {
         // sort all the areas relative to the current item
+        // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
         venn.sortAreas(div, d);
 
         // Display a tooltip with the current size
         tooltip.transition().duration(400).style('opacity', 0.9);
+        // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
         tooltip.text(d.size + ' users');
 
         // highlight the current path
@@ -71,6 +74,7 @@ const Venn: Component<{
         selection
           .select('path')
           .style('stroke-width', 3)
+          // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
           .style('fill-opacity', d.sets?.length == 1 ? 0.4 : 0.1)
           .style('stroke-opacity', 1);
       })
@@ -85,6 +89,7 @@ const Venn: Component<{
         selection
           .select('path')
           .style('stroke-width', 0)
+          // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
           .style('fill-opacity', d.sets?.length == 1 ? 0.25 : 0.0)
           .style('stroke-opacity', 0);
       });
