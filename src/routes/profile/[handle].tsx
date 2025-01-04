@@ -2,9 +2,11 @@ import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
 import { createMemo, Show } from "solid-js";
-import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
+import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
+import { GetSetType, KeysOfType } from "~/utils";
+import { isBlockedPost, isThreadViewPost } from "@atproto/api/dist/client/types/app/bsky/feed/defs";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 export default function Handle() {
@@ -32,6 +34,9 @@ export default function Handle() {
     post => post.author.handle === params.handle
   )
 
+  type PView = GetSetType<ReturnType<typeof recentPosts["data"]>>
+  const sumForMaxValue = (key: KeysOfType<PView, number | undefined>) => createMemo(() => Array.from(recentPosts.data()).reduce((acc, post) => acc + (post[key] ?? 0), 0))
+
   const likes = createCursorMappingReduction(
     recentPosts,
     post => post.uri,
@@ -41,8 +46,25 @@ export default function Handle() {
     () => new Set<string>(),
     (a, b) => a.union(b)
   )
+  const maxLikes = sumForMaxValue("likeCount")
 
-  const maxLikes = createMemo(() => Array.from(recentPosts.data()).reduce((acc, post) => acc + (post.likeCount ?? 0), 0))
+  const replies = createCursorMappingReduction(
+    recentPosts,
+    post => post.uri,
+    (post, _cursor) => getPostThread({ uri: post.uri, depth: 1, parentHeight: 0 }),
+    // TODO: explore not abusing the wrapper like this... no pagination for this api
+    (v) => undefined,
+    (acc, val) => isThreadViewPost(val.data.thread)
+      ? acc.union(new Set(
+        (val.data.thread.replies ?? [])
+          .filter(p => isThreadViewPost(p) || isBlockedPost(p))
+          .map(p => isThreadViewPost(p) ? p.post.author.did : p.author.did)
+      ))
+      : acc,
+    () => new Set<string>(),
+    (a, b) => a.union(b)
+  )
+  const maxReplies = sumForMaxValue("replyCount")
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
 
@@ -61,7 +83,8 @@ export default function Handle() {
           <p aria-busy={busy(follows, followers)}>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p aria-busy={busy(recentPosts, likes)}>{likes.data().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">engaged with @{params.handle}</span> via {likes.data().size} likes on most recent <span
+          <p aria-busy={busy(recentPosts, likes)}>{likes.data().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
+            engaged with @{params.handle}</span> via {likes.data().size} likes and {replies.data().size} top level replies on most recent <span
             data-tooltip={`top level posts ${params.handle} authored`}
           >{recentPosts.data().size} posts</span></p>
         </SuspenseProgress>
@@ -73,13 +96,15 @@ export default function Handle() {
             <CompletableProgress value={followers.data().size} max={profile()?.data.followersCount} isDone={followers.isDone()} />
             <h6>following</h6>
             <CompletableProgress value={follows.data().size} max={profile()?.data.followsCount} isDone={follows.isDone()} />
-            <h6>engagement</h6>
+            <h6>engagement <small><small>likes, replies</small></small></h6>
             <CompletableProgress value={likes.data().size} max={maxLikes()} isDone={likes.isDone()} />
+            <CompletableProgress value={replies.data().size} max={maxReplies()} isDone={replies.isDone()} />
           </Show>
           <Venn data={{
             followers: followers.data(),
             following: follows.data(),
-            "engaged w user": likes.data()
+            "engaged w user": likes.data(),
+            "replied": replies.data()
           }} />
         </SuspenseProgress>
       </article>

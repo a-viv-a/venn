@@ -27,5 +27,10 @@ const spreadretrec = <A extends unknown[], O extends object>(f: (...args: A) => 
 export const getProfile = query(spreadret(agent.getProfile), "agent.getProfile")
 export const getFollows = query(spreadret(agent.getFollows), "agent.getFollows")
 export const getFollowers = query(spreadret(agent.getFollowers), "agent.getFollowers")
-export const getLikes = query(spreadret(agent.getLikes), "agent.getLikes")
 export const getAuthorFeed = query(spreadretrec(agent.getAuthorFeed), "agent.getAuthorFeed")
+
+export const getLikes = query(spreadret(agent.getLikes), "agent.getLikes")
+export const getPostThread = query(spreadret(agent.getPostThread), "agent.getPostThread")
+// TODO: get bsky to add CORS headers to these endpoints? hmm
+// consider a cloudflare worker CORS proxy that only works for venn domains -> bsky public api
+// export const getRepostedBy = query(spreadret(agent.getRepostedBy), "agent.getRepostedBy")

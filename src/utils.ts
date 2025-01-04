@@ -9,6 +9,12 @@ export const narrow = <A, B extends A>(accessor: Accessor<A>, guard: (v: A) => v
   return null
 }
 
+export type GetSetType<T> = T extends Set<infer U> ? U : never;
+export type KeysOfType<T, U> = keyof {
+  [K in keyof T as T[K] extends U ? K : never]: T[K];
+}
+
+
 const dbgStore = new Map()
 const makeDbg = (ctx: unknown = undefined, showCtx = false) => IS_DEVELOPMENT ? new Proxy({} as Record<string | symbol, unknown>, {
   set:
