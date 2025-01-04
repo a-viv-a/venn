@@ -39,7 +39,8 @@ const computeSets = (data: Record<string, Set<string>>) => {
 }
 
 const Venn: Component<{
-  data: Record<string, Set<string>>
+  data: Record<string, Set<string>>,
+  onFinishRender?: () => void
 }> = props => {
   let wrapperRef: HTMLDivElement | undefined
   let tooltipRef: HTMLDivElement | undefined
@@ -93,6 +94,8 @@ const Venn: Component<{
           .style('fill-opacity', d.sets?.length == 1 ? 0.25 : 0.0)
           .style('stroke-opacity', 0);
       });
+
+      if (props.onFinishRender) props.onFinishRender()
   }
 
   const triggerRender = throttle((data: typeof props.data) => {

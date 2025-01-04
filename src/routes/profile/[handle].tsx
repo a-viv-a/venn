@@ -1,7 +1,7 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { createAsync, useParams } from "@solidjs/router";
-import { createMemo, Show } from "solid-js";
+import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
@@ -11,6 +11,17 @@ import { isBlockedPost, isThreadViewPost } from "@atproto/api/dist/client/types/
 const Venn = clientOnly(() => import("~/components/Venn"))
 export default function Handle() {
   const params = useParams<{ handle: string }>()
+
+  const [showEngagement, setShowEngagement] = createSignal(true)
+  const [seperateEngagement, setSeperateEngagement] = createSignal(false)
+
+  const [showDiagram, setShowDiagram] = createSignal(true)
+  const [rendering, setRendering] = createSignal(false)
+
+  createEffect(() => {
+    if (!showDiagram()) setShowDiagram(true)
+  })
+
   const profile = createAsync(() => getProfile({
     actor: params.handle
   }))
@@ -67,6 +78,7 @@ export default function Handle() {
   const maxReplies = sumForMaxValue("replyCount")
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
+  const engagement = createMemo(() => likes.data().union(replies.data()))
 
   return (
     <>
@@ -83,10 +95,10 @@ export default function Handle() {
           <p aria-busy={busy(follows, followers)}>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p aria-busy={busy(recentPosts, likes)}>{likes.data().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
+          <p aria-busy={busy(recentPosts, likes, replies)}>{engagement().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
             engaged with @{params.handle}</span> via {likes.data().size} likes and {replies.data().size} top level replies on most recent <span
-            data-tooltip={`top level posts ${params.handle} authored`}
-          >{recentPosts.data().size} posts</span></p>
+              data-tooltip={`top level posts ${params.handle} authored`}
+            >{recentPosts.data().size} posts</span></p>
         </SuspenseProgress>
       </article>
       <article>
@@ -100,13 +112,46 @@ export default function Handle() {
             <CompletableProgress value={likes.data().size} max={maxLikes()} isDone={likes.isDone()} />
             <CompletableProgress value={replies.data().size} max={maxReplies()} isDone={replies.isDone()} />
           </Show>
-          <Venn data={{
-            followers: followers.data(),
-            following: follows.data(),
-            "engaged w user": likes.data(),
-            "replied": replies.data()
-          }} />
+          <Show when={showDiagram()}>
+            <Venn data={{
+              ...{
+                followers: followers.data(),
+                following: follows.data(),
+              },
+              ...(
+                !showEngagement()
+                  ? {}
+                  : seperateEngagement()
+                    ? {
+                      "liked": likes.data(),
+                      "replied": replies.data()
+                    }
+                    : {
+                      "engaged": engagement()
+                    }
+              )
+            }} onFinishRender={() => {
+              if (!untrack(showDiagram)) setShowDiagram(true)
+            }} />
+          </Show>
         </SuspenseProgress>
+      </article>
+      <article>
+        <h2>config</h2>
+        <fieldset>
+          <label>
+            <input name="showEngagement" type="checkbox" role="switch" checked={showEngagement()} onChange={e => setShowEngagement(e.currentTarget.checked)} />
+            display engagement in venn diagram
+          </label>
+          <label>
+            <input name="seperateEngagementTypes" type="checkbox" role="switch" disabled={!showEngagement()} checked={seperateEngagement()} onChange={e => setSeperateEngagement(e.currentTarget.checked)} />
+            display types of engagement seperately
+          </label>
+          <button class="secondary" aria-busy={rendering()} onClick={() => batch(() => {
+            setShowDiagram(false)
+            setRendering(true)
+          })} >rerender (fix visual issues)</button>
+        </fieldset>
       </article>
     </>
   );
