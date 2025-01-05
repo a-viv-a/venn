@@ -1,17 +1,16 @@
 import { Title } from "@solidjs/meta";
+import { A } from "@solidjs/router";
+import { HandleInput } from "~/components/HandleInput";
 
 export default function Home() {
   return (
     <main>
-      <Title>Hello World</Title>
-      <h1>Hello world!</h1>
+      <Title>venn</Title>
+      <h1>venn diagram</h1>
       <p>
-        Visit{" "}
-        <a href="https://start.solidjs.com" target="_blank">
-          start.solidjs.com
-        </a>{" "}
-        to learn how to build SolidStart apps.
+        Go forth! Generate your very own venn diagram! Or go <A href="/about">read about this site.</A>
       </p>
+      <HandleInput />
     </main>
   );
 }
