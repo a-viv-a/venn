@@ -6,6 +6,7 @@ import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getPr
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
 import { GetSetType, KeysOfType } from "~/utils";
+import { BskyCompose } from "~/components/BskyCompose";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 const CurrentUrl = clientOnly(() => import("~/components/CurrentUrl"))
@@ -16,6 +17,11 @@ export const route = {
     handle: (handle: string) => URL.canParse(`https://${handle}`)
   }
 }
+
+const indefiniteNumber = (n: number) =>
+  (n == 8 || n == 11 || n == 18 || n.toString().charAt(0) == "8")
+    ? "an"
+    : "a"
 
 
 export default function Handle() {
@@ -70,6 +76,7 @@ export default function Handle() {
 
   const mutuals = createMemo(() => (follows.data()).intersection(followers.data()).size)
   const engagement = likes.data
+  const ratio = (digits: number) => (followers.data().size / follows.data().size).toFixed(digits)
 
   return (
     <>
@@ -121,6 +128,12 @@ export default function Handle() {
             }} onFinishRender={() => {
               if (untrack(rendering)) setRendering(false)
             }} />
+          </Show>
+          <Show when={!busy(followers, follows, likes)}>
+            <BskyCompose linkText="share on bluesky!" text={
+              `I have ${indefiniteNumber(parseInt(ratio(0)))
+              } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
+            } />
           </Show>
         </SuspenseProgress>
       </article>
