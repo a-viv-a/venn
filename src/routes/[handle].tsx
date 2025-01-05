@@ -94,10 +94,10 @@ export default function Handle() {
         <h5 data-tooltip="does not include suspended, deactivated, deleted, or blocked">true stats</h5>
         <SuspenseProgress>
           <ShowRatio follows={follows.data().size} followers={followers.data().size} busy={busy(follows, followers)} />
-          <p aria-busy={busy(follows, followers)}>{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
+          <p aria-busy={busy(follows, followers)} style="white-space: initial">{mutuals()} mutual{mutuals() !== 1 ? "s" : ""}, {(mutuals() / follows.data().size * 100).toFixed(1)}% of accounts followed are mutuals</p>
         </SuspenseProgress>
         <SuspenseProgress>
-          <p aria-busy={busy(recentPosts, likes)}>{engagement().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
+          <p aria-busy={busy(recentPosts, likes)} style="white-space: initial">{engagement().size} unique users <span data-tooltip="union of set of actors for all engagement metrics">
             engaged with @{params.handle}</span> via likes on most recent <span
               data-tooltip={`top level posts ${params.handle} authored`}
             >{recentPosts.data().size} posts</span></p>
@@ -130,10 +130,12 @@ export default function Handle() {
             }} />
           </Show>
           <Show when={!busy(followers, follows, likes)}>
-            <BskyCompose linkText="share on bluesky!" text={
-              `I have ${indefiniteNumber(parseInt(ratio(0)))
-              } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
-            } />
+            <p>
+              <BskyCompose linkText="share on bluesky!" text={
+                `I have ${indefiniteNumber(parseInt(ratio(0)))
+                } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
+              } />
+            </p>
           </Show>
         </SuspenseProgress>
       </article>

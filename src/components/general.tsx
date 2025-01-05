@@ -4,7 +4,7 @@ export const ShowRatio: Component<{
   follows?: number,
   followers?: number,
   busy?: boolean
-}> = props => <p aria-busy={props.busy}>
+}> = props => <p aria-busy={props.busy} style="white-space: initial">
   <sup>{props.followers} followers</sup>&frasl;<sub>{props.follows} following</sub> = {
     ((props.followers ?? 0) / (props.follows ?? 1)).toFixed(3)
   } ratio

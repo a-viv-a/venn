@@ -48,8 +48,18 @@ const Venn: Component<{
 
   const render = (sets: ReturnType<typeof computeSets>) => {
     const chart = venn.VennDiagram();
-    // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
-    const div = d3.select(wrapperRef!).datum(sets).call(chart);
+    const div = d3
+      .select(wrapperRef!)
+      .datum(sets)
+      // @ts-expect-error WARN: TYPING SUPERFUND SITE WIP
+      .call(chart);
+
+    div
+      .select("svg")
+      // clear the width and height, use viewbox (magic numbers equal old width and height)
+      .attr("width", null)
+      .attr("height", null)
+      .attr("viewBox", `0 0 600 350`)
 
     // add a tooltip
     const tooltip = d3.select(tooltipRef!)
@@ -95,7 +105,7 @@ const Venn: Component<{
           .style('stroke-opacity', 0);
       });
 
-      if (props.onFinishRender) props.onFinishRender()
+    if (props.onFinishRender) props.onFinishRender()
   }
 
   const triggerRender = throttle((data: typeof props.data) => {
@@ -108,7 +118,7 @@ const Venn: Component<{
   })
 
 
-  return <div ref={wrapperRef} >
+  return <div ref={wrapperRef} class={styles.venndiagram}>
     <div class={styles.venntooltip} ref={tooltipRef} />
   </div>
 }

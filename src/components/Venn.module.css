@@ -1,3 +1,8 @@
+.venndiagram {
+  margin-bottom: var(--pico-typography-spacing-vertical);
+  max-width: 600px;
+}
+
 .venntooltip {
   position: absolute;
   text-align: center;
