@@ -7,8 +7,12 @@ export default function NotFound() {
     <>
       <Title>Not Found</Title>
       <HttpStatusCode code={404} />
-      <h1>Page Not Found</h1>
-      <A href="/">go home</A>
+      <article>
+        <h1>you win a 404!</h1>
+        <p>there is no page here. if you were expecting to load a venn diagram, make sure you put something reasonable in the url.
+          otherwise, this page doesn't exist. maybe it never did.</p>
+        <A href="/">go home</A>
+      </article>
     </>
   );
 }
