@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
-import { A, createAsync, useParams } from "@solidjs/router";
+import { A, createAsync, RouteDescription, useParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
@@ -9,6 +9,14 @@ import { GetSetType, KeysOfType } from "~/utils";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 const CurrentUrl = clientOnly(() => import("~/components/CurrentUrl"))
+
+
+export const route = {
+  matchFilters: {
+    handle: (handle: string) => URL.canParse(`https://${handle}`)
+  }
+}
+
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
