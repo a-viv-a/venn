@@ -1,16 +1,14 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
-import { A, createAsync, RouteDescription, useParams } from "@solidjs/router";
+import { A, action, createAsync, useParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
-import { GetSetType, KeysOfType } from "~/utils";
+import { dbg, GetSetType, KeysOfType } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
-const CurrentUrl = clientOnly(() => import("~/components/CurrentUrl"))
-
 
 export const route = {
   matchFilters: {
@@ -23,12 +21,15 @@ const indefiniteNumber = (n: number) =>
     ? "an"
     : "a"
 
+const storeSVG = action(async (svg: string) => {
+  "use server"
+  
+})
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
 
   const [showLikes, setShowLikes] = createSignal(true)
-  const [seperateEngagement, setSeperateEngagement] = createSignal(false)
 
   const [showDiagram, setShowDiagram] = createSignal(true)
   const [rendering, setRendering] = createSignal(false)
@@ -84,7 +85,7 @@ export default function Handle() {
       <article>
         <div role="group" class="even">
           <h2>{`@${params.handle}`}</h2>
-          <CurrentUrl />
+          <a href={`https://venn.aviva.gay/${params.handle}`}>https://venn.aviva.gay/{params.handle}</a>
           <p><small>made w/ ❤️ by <A target="_blank" href="https://bsky.app/profile/aviva.gay">@aviva.gay</A></small></p>
         </div>
         <h5 data-tooltip="what getProfile returns—the value you see when visiting a profile">profile stats</h5>
@@ -131,10 +132,10 @@ export default function Handle() {
           </Show>
           <Show when={!busy(followers, follows, likes)}>
             <p>
-              <BskyCompose linkText="share on bluesky!" text={
-                `I have ${indefiniteNumber(parseInt(ratio(0)))
-                } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
-              } />
+              <BskyCompose message="share on bluesky!" postText={async () => {
+                return `I have ${indefiniteNumber(parseInt(ratio(0)))
+                  } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
+              }} />
             </p>
           </Show>
         </SuspenseProgress>

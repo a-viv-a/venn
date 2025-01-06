@@ -123,3 +123,10 @@ const Venn: Component<{
   </div>
 }
 export default Venn
+
+
+export const getSvgHtml = () => {
+  const venn = document.querySelector<SVGAElement>(`.${styles.venndiagram} > svg`)
+  if (venn === null) return ""
+  return venn.outerHTML
+}
