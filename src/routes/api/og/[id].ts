@@ -1,5 +1,4 @@
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
-import resvgWasmInit from "@resvg/resvg-wasm/index_bg.wasm?init"
 import type { APIEvent } from "@solidjs/start/server";
 import { IS_DEVELOPMENT } from "~/mode";
 import { useEvent } from "~/server/serverUtils";
@@ -36,9 +35,7 @@ export async function GET(event: APIEvent) {
 
   try {
     if (!init) {
-      await initWasm(IS_DEVELOPMENT
-        ? fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm')
-        : resvgWasmInit())
+      await initWasm(fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm'))
       init = true
     }
 
