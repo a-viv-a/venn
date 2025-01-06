@@ -1,11 +1,11 @@
-import { Title } from "@solidjs/meta";
+import { Meta, Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { A, action, createAsync, json, useAction, useParams, useSearchParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
-import { dbg, GetSetType, KeysOfType } from "~/utils";
+import { dbg, getLast, GetSetType, KeysOfType } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
 import { customAlphabet } from "nanoid";
@@ -107,6 +107,15 @@ export default function Handle() {
   return (
     <>
       <Title>{`@${params.handle}`}</Title>
+      <Meta property="og:type" content="profile" />
+      <Meta property="og:title" content={`@${params.handle}`} />
+      <Meta property="og:url" content={`https://venn.aviva.gay/${params.handle}`} />
+      <Meta property="og:site_name" content="venn.aviva.gay" />
+      <Meta property="og:description" content={`venn diagram of bluesky behavior for @${params.handle}`} />
+      <Meta property="profile:username" content={`@${params.handle}`} />
+      <Show when={searchParams.og}>{og =>
+        <Meta property="og:image" content={`/api/og/${getLast(og())}`} />
+      }</Show>
       <article>
         <div role="group" class="even">
           <h2>{`@${params.handle}`}</h2>
