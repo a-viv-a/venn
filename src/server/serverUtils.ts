@@ -2,8 +2,9 @@ import { getRequestEvent } from "solid-js/web"
 import type { H3EventContext } from "vinxi/http"
 import { IS_PRODUCTION } from "~/mode"
 
-export const useEvent = async () => {
-  const event = getRequestEvent()
+export const useEvent = async (
+  event = getRequestEvent()
+) => {
   if (event === undefined) {
     throw new Error("missing event details")
   }

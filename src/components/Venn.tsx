@@ -60,7 +60,9 @@ const Venn: Component<{
       .attr("width", null)
       .attr("height", null)
       .attr("viewBox", `0 0 600 350`)
-
+      // make the svg legal !
+      .attr("xmlns", "http://www.w3.org/2000/svg")
+      
     // add a tooltip
     const tooltip = d3.select(tooltipRef!)
 
