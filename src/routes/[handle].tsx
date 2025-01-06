@@ -9,9 +9,9 @@ import { dbg, getLast, GetSetType, KeysOfType } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
 import { customAlphabet } from "nanoid";
-import { getSvgHtml } from "~/components/Venn";
 import { IS_DEVELOPMENT } from "~/mode";
 import { HandleInput } from "~/components/HandleInput";
+import { getVennSVG } from "~/getSVG";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -169,7 +169,7 @@ export default function Handle() {
             <p>
               <BskyCompose message="share on bluesky!" postText={async () => {
                 let queryParam = ""
-                const svg = getSvgHtml()
+                const svg = getVennSVG()
                 if (IS_DEVELOPMENT) console.log({ svg })
                 if (svg !== undefined) {
                   const response = await storeSVG(svg)
