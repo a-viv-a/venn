@@ -10,6 +10,7 @@ import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
 import { customAlphabet } from "nanoid";
 import { getSvgHtml } from "~/components/Venn";
+import { IS_DEVELOPMENT } from "~/mode";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -154,12 +155,15 @@ export default function Handle() {
           <Show when={!busy(followers, follows, likes)}>
             <p>
               <BskyCompose message="share on bluesky!" postText={async () => {
+                let queryParam = ""
                 const svg = getSvgHtml()
-                const response = await storeSVG(svg)
-                console.log({ response })
-                const queryParam = "error" in response
-                  ? ""
-                  : `?og=${response.id}`
+                if (IS_DEVELOPMENT) console.log({svg})
+                if (svg !== undefined) {
+                  const response = await storeSVG(svg)
+                  if (!("error" in response)) {
+                    queryParam = `?og=${response.id}`
+                  }
+                }
                 return `I have ${indefiniteNumber(parseInt(ratio(0)))
                   } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}${queryParam}`
               }} />
