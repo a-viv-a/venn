@@ -17,6 +17,10 @@ export async function GET(event: APIEvent) {
   const svgString = await env.svgs.get(id)
   if (svgString === null) return new Response(null, { status: 404 })
   if (IS_DEVELOPMENT) console.log({ svgString })
+  if (svgString.length > 2_500) {
+    console.warn(`string too long: ${svgString.length}`)
+    return new Response(null, { status: 400 })
+  }
 
   try {
     if (!init) {
