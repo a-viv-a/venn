@@ -11,7 +11,7 @@ import { useEvent } from "~/server/serverUtils";
 import { customAlphabet } from "nanoid";
 import { IS_DEVELOPMENT } from "~/mode";
 import { HandleInput } from "~/components/HandleInput";
-import { getVennSVG } from "~/getSVG";
+import { getVennSVG } from "~/getVennSVG";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
