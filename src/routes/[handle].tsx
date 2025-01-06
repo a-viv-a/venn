@@ -1,12 +1,15 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
-import { A, action, createAsync, useParams } from "@solidjs/router";
+import { A, action, createAsync, json, useAction, useParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
 import { dbg, GetSetType, KeysOfType } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
+import { useEvent } from "~/server/serverUtils";
+import { customAlphabet } from "nanoid";
+import { getSvgHtml } from "~/components/Venn";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -21,13 +24,31 @@ const indefiniteNumber = (n: number) =>
     ? "an"
     : "a"
 
-const storeSVG = action(async (svg: string) => {
+const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 8)
+const storeSVGAction = action(async (svg: string) => {
   "use server"
-  
+  // TODO: make this bound tighter, make svg more efficient
+  if (svg.length > 5_000) {
+    return json({ error: "length limit exceeded" } as const, { status: 400 })
+  }
+
+  const { env } = await useEvent()
+  // with size 8, 1k an hour;
+  // ~87 days or 2M IDs for 1% chance of collision
+  // https://zelark.github.io/nano-id-cc/
+  const id = nanoid(8)
+  await env.svgs.put(id, svg, {
+    // when to expire the key-value pair in seconds from now
+    // expire after 10 minutes
+    expirationTtl: 60 * 10
+  })
+
+  return json({ id } as const)
 })
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
+  const storeSVG = useAction(storeSVGAction)
 
   const [showLikes, setShowLikes] = createSignal(true)
 
@@ -133,8 +154,14 @@ export default function Handle() {
           <Show when={!busy(followers, follows, likes)}>
             <p>
               <BskyCompose message="share on bluesky!" postText={async () => {
+                const svg = getSvgHtml()
+                const response = await storeSVG(svg)
+                console.log({ response })
+                const queryParam = "error" in response
+                  ? ""
+                  : `?og=${response.id}`
                 return `I have ${indefiniteNumber(parseInt(ratio(0)))
-                  } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}`
+                  } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}${queryParam}`
               }} />
             </p>
           </Show>
