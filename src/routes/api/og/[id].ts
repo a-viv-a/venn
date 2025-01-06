@@ -1,4 +1,6 @@
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
+// @ts-expect-error wasm is unhappy
+import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm"
 import type { APIEvent } from "@solidjs/start/server";
 import { IS_DEVELOPMENT } from "~/mode";
 import { useEvent } from "~/server/serverUtils";
@@ -35,7 +37,9 @@ export async function GET(event: APIEvent) {
 
   try {
     if (!init) {
-      await initWasm(fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm'))
+      await initWasm(IS_DEVELOPMENT
+        ? fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm')
+        : resvgWasm)
       init = true
     }
 
