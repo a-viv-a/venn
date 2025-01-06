@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { A, action, createAsync, json, useAction, useParams, useSearchParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
-import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
+import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
 import { dbg, GetSetType, KeysOfType } from "~/utils";
@@ -11,6 +11,7 @@ import { useEvent } from "~/server/serverUtils";
 import { customAlphabet } from "nanoid";
 import { getSvgHtml } from "~/components/Venn";
 import { IS_DEVELOPMENT } from "~/mode";
+import { HandleInput } from "~/components/HandleInput";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -174,6 +175,12 @@ export default function Handle() {
           </Show>
         </SuspenseProgress>
       </article>
+      <Show when={searchParams.og}>
+        <article>
+          <p>generate your own venn diagram!</p>
+          <HandleInput />
+        </article>
+      </Show>
       <article>
         <h2>config</h2>
         <fieldset>

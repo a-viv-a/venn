@@ -1,5 +1,4 @@
 import { Title } from "@solidjs/meta";
-import { A } from "@solidjs/router";
 import { HandleInput } from "~/components/HandleInput";
 
 export default function Home() {
