@@ -7,6 +7,9 @@ import { useEvent } from "~/server/serverUtils";
 // worker might be reused for multiple invocations
 let init = false
 
+// TODO: fix this it smells bad
+const robotoMediumBuffer = new Uint8Array(await (await fetch("https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxK.woff2")).arrayBuffer())
+
 export async function GET(event: APIEvent) {
   const id = event.params.id
   const { env } = await useEvent(event)
@@ -22,7 +25,13 @@ export async function GET(event: APIEvent) {
         : resvgWasmInit())
       init = true
     }
-    const resvg = new Resvg(svgString)
+    const resvg = new Resvg(svgString, {
+      font: {
+        fontBuffers: [
+          robotoMediumBuffer
+        ]
+      }
+    })
 
     const img = resvg.render()
     return new Response(img.asPng(), {
