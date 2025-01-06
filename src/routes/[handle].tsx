@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
-import { A, action, createAsync, json, useAction, useParams } from "@solidjs/router";
+import { A, action, createAsync, json, useAction, useParams, useSearchParams } from "@solidjs/router";
 import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getPostThread, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
@@ -49,6 +49,8 @@ const storeSVGAction = action(async (svg: string) => {
 
 export default function Handle() {
   const params = useParams<{ handle: string }>()
+  const [searchParams, setSearchParams] = useSearchParams<{ og: string | string[] }>()
+
   const storeSVG = useAction(storeSVGAction)
 
   const [showLikes, setShowLikes] = createSignal(true)
@@ -157,11 +159,12 @@ export default function Handle() {
               <BskyCompose message="share on bluesky!" postText={async () => {
                 let queryParam = ""
                 const svg = getSvgHtml()
-                if (IS_DEVELOPMENT) console.log({svg})
+                if (IS_DEVELOPMENT) console.log({ svg })
                 if (svg !== undefined) {
                   const response = await storeSVG(svg)
                   if (!("error" in response)) {
                     queryParam = `?og=${response.id}`
+                    setSearchParams({ og: response.id })
                   }
                 }
                 return `I have ${indefiniteNumber(parseInt(ratio(0)))

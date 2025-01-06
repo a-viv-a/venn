@@ -14,6 +14,10 @@ export type KeysOfType<T, U> = keyof {
   [K in keyof T as T[K] extends U ? K : never]: T[K];
 }
 
+export const getLast = <T>(v: T | T[]) => Array.isArray(v)
+  ? v[v.length - 1]
+  : v
+
 
 const dbgStore = new Map()
 const makeDbg = (ctx: unknown = undefined, showCtx = false) => IS_DEVELOPMENT ? new Proxy({} as Record<string | symbol, unknown>, {

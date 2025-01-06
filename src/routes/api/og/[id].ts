@@ -4,6 +4,21 @@ import type { APIEvent } from "@solidjs/start/server";
 import { IS_DEVELOPMENT } from "~/mode";
 import { useEvent } from "~/server/serverUtils";
 
+/*
+is this safe? I *think* so;
+
+- we limit the length of the svg pretty hard, should reduce denial of wallet risk?
+- independent worker from the one serving the ssr page, *should* eliminate xss risk
+- we run within cf workers, which is "perfect" containerization, for free
+- no data of any value is stored in the worker, so escaping from resvg would only allow
+poisioning future responses for images. maybe.
+
+unknowns:
+- is resvg ok for this usecase? does it intend to parse untrusted input?
+- can resvg go into infinite loops or be tricked into making network requests?
+*/
+
+
 // worker might be reused for multiple invocations
 let init = false
 
