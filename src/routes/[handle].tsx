@@ -113,9 +113,10 @@ export default function Handle() {
       <Meta property="og:site_name" content="venn.aviva.gay" />
       <Meta property="og:description" content={`venn diagram of bluesky behavior for @${params.handle}`} />
       <Meta property="profile:username" content={`@${params.handle}`} />
-      <Show when={searchParams.og}>{og =>
+      <Show when={searchParams.og}>{og => <>
         <Meta property="og:image" content={`/api/og/${getLast(og())}`} />
-      }</Show>
+        <Meta property="og:image:alt" content="a venn diagram of followers, follows, and likes" />
+      </>}</Show>
       <article>
         <div role="group" class="even">
           <h2>{`@${params.handle}`}</h2>
