@@ -1,32 +1,42 @@
-# SolidStart
+# venn
 
-Everything you need to build a Solid project, powered by [`solid-start`](https://start.solidjs.com);
-
-## Creating a project
-
-```bash
-# create a new project in the current directory
-npm init solid@latest
-
-# create a new project in my-app
-npm init solid@latest my-app
-```
+generate bluesky venn diagrams; [venn.aviva.gay](https://venn.aviva.gay)
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+install dependencies
 
 ```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+npm i
 ```
 
-## Building
+use `flake.nix` or install [just](https://github.com/casey/just)
 
-Solid apps are built with _presets_, which optimise your project for deployment to different environments.
+```bash
+just dev
 
-By default, `npm run build` will generate a Node app that you can run with `npm start`. To use a different preset, add it to the `devDependencies` in `package.json` and specify in your `app.config.js`.
+# run a local build
+just build
 
-## This project was created with the [Solid CLI](https://solid-cli.netlify.app)
+# generate wrangler types
+just typegen
+
+# check for type errors
+just check
+```
+
+## Deployment
+
+If you wanted to deploy a fork, you should create a new cloudflare pages project
+and have it run `./pages_build.sh`, and then deploy `/dist`. Kindly also host
+a copy of [svg](https://github.com/a-viv-a/svg), and grep through the source to
+find references to `venn.aviva.gay` and `svg.aviva.gay`.
+
+you could definitely make this work on a different serverless platform but no
+support for that usecase.
+
+## Contributions
+
+I'll take PRs if they are smaller/low maintenance effort but please open an
+issue or reach out so we can agree on if a larger or more significant piece of
+work is worth doing. I see this as a neat hack moreso than an ongoing project.
