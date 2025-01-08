@@ -14,7 +14,7 @@ build:
     just postbuild
 
 postbuild:
-    #!/bin/sh
+    #!/usr/bin/env bash
     for wasm in dist/assets/*.{wasm,wasm.br,wasm.gz}; do
         echo cp dist/assests/$wasm dist/_build/assets
         cp $wasm dist/_build/assets/
