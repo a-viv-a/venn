@@ -7,6 +7,8 @@ export const getVennSVG = () => {
 
   // make the svg legal for standalone rendering
   venn.setAttribute("xmlns", "http://www.w3.org/2000/svg")
+  // add some margin to not get cut off
+  venn.style.margin = "20px"
   // these are only for interactivity, we can drop them
   venn.querySelectorAll("g.venn-intersection").forEach(g => venn.removeChild(g))
   // in the document this is inhereted but we need to set it for the rendering

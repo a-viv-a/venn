@@ -101,6 +101,8 @@ export default function Handle() {
       <Meta property="profile:username" content={`@${params.handle}`} />
       <Show when={searchParams.og}>{og => <>
         <Meta property="og:image" content={`https://svg.aviva.gay/${getLast(og())}`} />
+        <Meta property="og:image:width" content="600" />
+        <Meta property="og:image:height" content="350" />
         <Meta property="og:image:alt" content="a venn diagram of followers, follows, and likes" />
       </>}</Show>
       <article>
