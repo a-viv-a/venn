@@ -1,16 +1,17 @@
 import { createAsync } from "@solidjs/router"
-import { Accessor, batch, createEffect, createMemo, createRenderEffect, createSignal } from "solid-js"
-import { createStore } from "solid-js/store"
+import { Accessor, batch, createEffect, createMemo, createRenderEffect, createSignal, untrack } from "solid-js"
+import { createStore, reconcile } from "solid-js/store"
 
 // if its a hobby hack the code can be as clever (read: bad) as I want!
 // sorry :3
 
-export const createCursorReduction = <TRetVal, TAccumulator>(
+export const createCursorReduction = <TRetVal, TAccumulator, TResetKey>(
   fn: (cursor: string | undefined) => Promise<TRetVal>,
+  resetOnChange: () => TResetKey,
   extractCursor: (value: TRetVal) => string | undefined,
   reducer: (previous: TAccumulator, currentValue: TRetVal) => TAccumulator,
   initialValue: TAccumulator,
-  terminate: (value: TAccumulator) => boolean = () => false
+  terminate: (value: TAccumulator) => boolean = () => false,
 ) => {
   const [accumulator, setAccumulator] = createSignal<TAccumulator>(initialValue)
   const [cursor, setCursor] = createSignal<string | undefined>()
@@ -39,6 +40,14 @@ export const createCursorReduction = <TRetVal, TAccumulator>(
       setCursor(newCursor)
     })
   })
+  const [key, setKey] = createSignal<TResetKey>(resetOnChange())
+  createEffect(() => {
+    if (untrack(key) !== resetOnChange()) batch(() => {
+      setKey(resetOnChange)
+      setCursor(undefined)
+      setAccumulator(() => initialValue)
+    })
+  })
 
   return {
     data: accumulator,
@@ -47,8 +56,9 @@ export const createCursorReduction = <TRetVal, TAccumulator>(
 }
 
 
-export const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
-  source: ReturnType<typeof createCursorReduction<unknown, Iterable<TInput>>>,
+export const createCursorMappingReduction = <TInput, TOutput, TAccumulator, TResetKey>(
+  source: ReturnType<typeof createCursorReduction<unknown, Iterable<TInput>, unknown>>,
+  resetOnChange: () => TResetKey,
   extractKey: (value: TInput) => string,
   map: (input: TInput, cursor: string | undefined) => Promise<TOutput>,
   extractCursor: (value: TOutput) => string | undefined,
@@ -57,7 +67,7 @@ export const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
   merge: (a: TAccumulator, b: TAccumulator) => TAccumulator
 ) => {
 
-  const [derivationCursorStore, setDerivationCursorStore] = createStore({} as Record<string, ReturnType<typeof createCursorReduction<TOutput, TAccumulator>>>)
+  const [derivationCursorStore, setDerivationCursorStore] = createStore({} as Record<string, ReturnType<typeof createCursorReduction<TOutput, TAccumulator, unknown>>>)
 
   createRenderEffect(() => {
     const sourceData = source.data()
@@ -72,9 +82,10 @@ export const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
       for (const [key, input] of newKeys) {
         const cursorReduction = createCursorReduction(
           (cursor) => map(input, cursor),
+          resetOnChange,
           extractCursor,
           reducer,
-          initialValue()
+          initialValue(),
         )
         setDerivationCursorStore(key, cursorReduction)
       }
@@ -82,13 +93,23 @@ export const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
 
   })
 
-  const internalMemo = createMemo(() => Object.values(derivationCursorStore).reduce(
-    (acc, val) => ({
-      data: merge(acc.data, val.data()),
-      isDone: acc.isDone && val.isDone()
-    }),
-    { data: initialValue(), isDone: true }
-  ))
+  const [key, setKey] = createSignal<TResetKey>(resetOnChange())
+  createEffect(() => {
+    if (untrack(key) !== resetOnChange()) batch(() => {
+      setKey(resetOnChange)
+      setDerivationCursorStore(reconcile({}))
+    })
+  })
+
+  const internalMemo = createMemo(() => {
+    return Object.values(derivationCursorStore).reduce(
+      (acc, val) => ({
+        data: merge(acc.data, val.data()),
+        isDone: acc.isDone && val.isDone()
+      }),
+      { data: initialValue(), isDone: true }
+    )
+  })
 
   // we want this to feel the same in the hand as the unmapped version
   return {
@@ -98,17 +119,19 @@ export const createCursorMappingReduction = <TInput, TOutput, TAccumulator>(
 }
 
 
-export const createBskyCursor = <TProps, TResponse extends { data: { cursor?: string | undefined } }, TAccumulateValue>(
+export const createBskyCursor = <TProps, TResponse extends { data: { cursor?: string | undefined } }, TAccumulateValue, TResetKey>(
   fn: (params: TProps & { cursor: string | undefined }) => Promise<TResponse>,
-  params: TProps,
+  params: () => TProps,
+  resetOnChange: () => TResetKey,
   extract: (output: TResponse["data"]) => Iterable<TAccumulateValue>,
   max: number = Number.POSITIVE_INFINITY,
-  predicate: (value: TAccumulateValue) => boolean = () => true
+  predicate: (value: TAccumulateValue) => boolean = () => true,
 ) => createCursorReduction(
   (cursor) => fn({
-    ...params,
+    ...params(),
     cursor
   }),
+  resetOnChange,
   v => v?.data.cursor,
   (acc, val) => {
     const newVals = Array.from(extract(val.data)).filter(predicate)

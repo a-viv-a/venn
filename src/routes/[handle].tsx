@@ -54,18 +54,21 @@ export default function Handle() {
   }))
   const followers = createBskyCursor(
     getFollowers,
-    { actor: params.handle, limit: 100 },
-    data => data.followers.map(pview => pview.did)
+    () => ({ actor: params.handle, limit: 100 }),
+    () => params.handle,
+    data => data.followers.map(pview => pview.did),
   )
   const follows = createBskyCursor(
     getFollows,
-    { actor: params.handle, limit: 100 },
-    data => data.follows.map(pview => pview.did)
+    () => ({ actor: params.handle, limit: 100 }),
+    () => params.handle,
+    data => data.follows.map(pview => pview.did),
   )
 
   const recentPosts = createBskyCursor(
     getAuthorFeed,
-    { actor: params.handle, limit: 100, filter: "posts_no_replies" },
+    () => ({ actor: params.handle, limit: 100, filter: "posts_no_replies" }),
+    () => params.handle,
     data => data.feed.map(fvPost => fvPost.post),
     50,
     // TODO: can people swap handles and cause issues for this? using did creates a waterfall on profile lookup
@@ -77,6 +80,7 @@ export default function Handle() {
 
   const likes = createCursorMappingReduction(
     recentPosts,
+    () => params.handle,
     post => post.uri,
     (post, cursor) => getLikes({ uri: post.uri, limit: 100, cursor }),
     (v) => v?.data.cursor,

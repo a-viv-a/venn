@@ -1,5 +1,5 @@
 import { action, redirect } from "@solidjs/router";
-import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
+import { Component, createEffect, createSignal } from "solid-js";
 
 const goGenerate = action(async (handle: string) => {
   throw redirect(`/${handle}`)
