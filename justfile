@@ -9,9 +9,8 @@ patch *flags:
 dev *flags:
     vinxi dev {{flags}}
 
-build:
+build: && postbuild
     vinxi build
-    just postbuild
 
 postbuild:
     #!/usr/bin/env bash
