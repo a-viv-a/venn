@@ -2,12 +2,7 @@
   "name": "example-basic",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start",
-    "version": "vinxi version",
-    "preview": "npm run build && npx wrangler pages dev",
-    "deploy": "npm run build && wrangler pages deploy"
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@atproto/api": "^0.13.24",
@@ -31,6 +26,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
     "@types/d3": "^7.4.3",
+    "patch-package": "^8.0.0",
     "vite-plugin-wasm-module-workers": "^0.0.2",
     "wrangler": "^3.99.0"
   }

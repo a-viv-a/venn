@@ -5,6 +5,18 @@ import { useEvent } from "~/server/serverUtils";
 
 import RESVG_WASM from '@resvg/resvg-wasm/index_bg.wasm?url'
 
+
+const getResvgWasm = async () => {
+  if (IS_DEVELOPMENT)
+    return fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm')
+
+  // weird formatting is so that the vite plugin works...
+  const { default: resvgwasm } = await import(
+    /* @vite-ignore */ `${RESVG_WASM}?module`
+  )
+  return resvgwasm
+}
+
 /*
 is this safe? I *think* so;
 
@@ -37,10 +49,8 @@ export async function GET(event: APIEvent) {
 
   try {
     if (!init) {
-      const { default: resvgwasm } = await import(
-        /* @vite-ignore */ `${RESVG_WASM}?module`
-      )
-      await initWasm(resvgwasm)
+      const resvgWasm = getResvgWasm()
+      await initWasm(resvgWasm)
       init = true
     }
 

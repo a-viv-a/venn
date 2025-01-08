@@ -1,0 +1,17 @@
+diff --git a/node_modules/nitropack/dist/core/index.mjs b/node_modules/nitropack/dist/core/index.mjs
+index 738002b..4019b3b 100644
+--- a/node_modules/nitropack/dist/core/index.mjs
++++ b/node_modules/nitropack/dist/core/index.mjs
+@@ -519,7 +519,11 @@ async function resolvePathOptions(options) {
+       options.nodeModulesDirs.map((dir) => resolve(options.rootDir, dir))
+     )
+   ];
+-  options.plugins = options.plugins.map((p) => resolveNitroPath(p, options));
++  options.plugins = options.plugins.filter(
++    // filter out non string paths...
++    // this filters out the vite plugins, not sure why they end up here but this works
++    p => typeof p === "string"  
++  ).map((p) => resolveNitroPath(p, options));
+   options.scanDirs.unshift(options.srcDir);
+   options.scanDirs = options.scanDirs.map(
+     (dir) => resolve(options.srcDir, dir)
