@@ -41,7 +41,7 @@ export async function GET(event: APIEvent) {
 
   try {
     if (!init) {
-      await initWasm(resvgWasm)
+      await initWasm(resvgwasm)
       init = true
     }
 
