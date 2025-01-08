@@ -1,9 +1,9 @@
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
-// @ts-expect-error wasm is unhappy
-import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm"
 import type { APIEvent } from "@solidjs/start/server";
 import { IS_DEVELOPMENT } from "~/mode";
 import { useEvent } from "~/server/serverUtils";
+
+import RESVG_WASM from '@resvg/resvg-wasm/index_bg.wasm?url'
 
 /*
 is this safe? I *think* so;
@@ -37,9 +37,10 @@ export async function GET(event: APIEvent) {
 
   try {
     if (!init) {
-      await initWasm(IS_DEVELOPMENT
-        ? fetch('https://unpkg.com/@resvg/resvg-wasm/index_bg.wasm')
-        : resvgWasm)
+      const { default: resvgwasm } = await import(
+        /* @vite-ignore */ `${RESVG_WASM}?module`
+      )
+      await initWasm(resvgwasm)
       init = true
     }
 
