@@ -19,7 +19,7 @@ export const getLast = <T>(v: T | T[]) => Array.isArray(v)
   : v
 
 export const signalAsPromise = (signal: Accessor<boolean>, owner: typeof Owner) => {
-  const {promise, resolve} = Promise.withResolvers<void>()
+  const { promise, resolve } = Promise.withResolvers<void>()
 
   runWithOwner(owner, () => createEffect(() => {
     if (signal()) {
@@ -29,6 +29,28 @@ export const signalAsPromise = (signal: Accessor<boolean>, owner: typeof Owner) 
 
   return promise
 }
+
+export function* chain<T>(...iterables: Iterable<T>[]) {
+  for (const iterable of iterables) {
+    yield* iterable
+  }
+}
+
+
+export const intersection = <T>(a: Set<T>, b: Set<T>) =>
+  // avoid narrowing...
+  "intersection" in a as unknown
+    ? a.intersection(b)
+    : new Set(a
+      .keys()
+      .filter(e => b.has(e))
+    )
+
+export const union = <T>(a: Set<T>, b: Set<T>) =>
+  // avoid narrowing...
+  "union" in a as unknown
+    ? a.union(b)
+    : new Set(chain(a.keys(), b.keys()))
 
 
 const dbgStore = new Map()

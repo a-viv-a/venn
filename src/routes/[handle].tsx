@@ -5,7 +5,7 @@ import { batch, createEffect, createMemo, createSignal, getOwner, Show, untrack 
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
-import { getLast, GetSetType, KeysOfType, signalAsPromise } from "~/utils";
+import { getLast, GetSetType, KeysOfType, signalAsPromise, union } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
 import { HandleInput } from "~/components/HandleInput";
@@ -85,9 +85,9 @@ export default function Handle() {
     post => post.uri,
     (post, cursor) => getLikes({ uri: post.uri, limit: 100, cursor }),
     (v) => v?.data.cursor,
-    (acc, val) => acc.union(new Set(val.data.likes.map(like => like.actor.did))),
+    (acc, val) => union(acc, new Set(val.data.likes.map(like => like.actor.did))),
     () => new Set<string>(),
-    (a, b) => a.union(b)
+    (a, b) => union(a, b)
   )
   const maxLikes = sumForMaxValue("likeCount")
 

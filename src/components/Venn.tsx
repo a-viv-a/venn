@@ -3,6 +3,7 @@ import * as venn from "@upsetjs/venn.js";
 import * as d3 from "d3"
 import styles from "./Venn.module.css"
 import { throttle } from "@solid-primitives/scheduled";
+import { intersection } from "~/utils";
 
 const subsets = <T,>(source: T[]) => function*() {
   for (let n = 1; n < Math.pow(2, source.length); n++) {
@@ -17,11 +18,12 @@ const subsets = <T,>(source: T[]) => function*() {
 }()
 
 const intersect = <T,>(sets: Set<T>[]) => {
-  if (sets.length < 2) return sets[0]
-  const newSet = sets.pop()!.intersection(sets.pop()!)
-  if (newSet.size === 0) return newSet
-  sets.push(newSet)
-  return intersect(sets)
+  while (sets.length > 2) {
+    const newSet = intersection(sets.pop()!, (sets.pop()!))
+    if (newSet.size === 0) return newSet
+    sets.push(newSet)
+  }
+  return sets[0]
 }
 
 const computeSets = (data: Record<string, Set<string>>) => {
@@ -60,7 +62,7 @@ const Venn: Component<{
       .attr("width", null)
       .attr("height", null)
       .attr("viewBox", `0 0 600 350`)
-      
+
     // add a tooltip
     const tooltip = d3.select(tooltipRef!)
 
