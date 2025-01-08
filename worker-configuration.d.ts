@@ -2,4 +2,5 @@
 
 interface Wenv {
 	svgs: KVNamespace;
+	STORE_SVG: Fetcher;
 }

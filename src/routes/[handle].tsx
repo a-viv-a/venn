@@ -8,7 +8,6 @@ import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
 import { dbg, getLast, GetSetType, KeysOfType } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
-import { customAlphabet } from "nanoid";
 import { IS_DEVELOPMENT } from "~/mode";
 import { HandleInput } from "~/components/HandleInput";
 import { getVennSVG } from "~/getVennSVG";
@@ -26,26 +25,13 @@ const indefiniteNumber = (n: number) =>
     ? "an"
     : "a"
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 8)
 const storeSVGAction = action(async (svg: string) => {
   "use server"
-  // TODO: make this bound tighter, make svg more efficient
-  if (svg.length > 5_000) {
-    return json({ error: "length limit exceeded" } as const, { status: 400 })
-  }
 
   const { env } = await useEvent()
-  // with size 8, 1k an hour;
-  // ~87 days or 2M IDs for 1% chance of collision
-  // https://zelark.github.io/nano-id-cc/
-  const id = nanoid(8)
-  await env.svgs.put(id, svg, {
-    // when to expire the key-value pair in seconds from now
-    // expire after 10 minutes
-    expirationTtl: 60 * 10
-  })
-
-  return json({ id } as const)
+  // @ts-expect-error typing doesn't sync...
+  const id: string = env.STORE_SVG.getId(svg)
+  return id
 })
 
 export default function Handle() {
@@ -114,7 +100,7 @@ export default function Handle() {
       <Meta property="og:description" content={`venn diagram of bluesky behavior for @${params.handle}`} />
       <Meta property="profile:username" content={`@${params.handle}`} />
       <Show when={searchParams.og}>{og => <>
-        <Meta property="og:image" content={`https://venn.aviva.gay/api/og/${getLast(og())}`} />
+        <Meta property="og:image" content={`https://svg.aviva.gay/${getLast(og())}`} />
         <Meta property="og:image:alt" content="a venn diagram of followers, follows, and likes" />
       </>}</Show>
       <article>
@@ -172,11 +158,9 @@ export default function Handle() {
                 const svg = getVennSVG()
                 if (IS_DEVELOPMENT) console.log({ svg })
                 if (svg !== undefined) {
-                  const response = await storeSVG(svg)
-                  if (!("error" in response)) {
-                    queryParam = `?og=${response.id}`
-                    setSearchParams({ og: response.id })
-                  }
+                  const id = await storeSVG(svg)
+                  queryParam = `?og=${id}`
+                  setSearchParams({ og: id })
                 }
                 return `I have ${indefiniteNumber(parseInt(ratio(0)))
                   } ${ratio(1)} follower/following ratio https://venn.aviva.gay/${params.handle}${queryParam}`
