@@ -175,12 +175,10 @@ export default function Handle() {
           </Show>
         </SuspenseProgress>
       </article>
-      <Show when={searchParams.og}>
-        <article>
-          <p>generate your own venn diagram!</p>
-          <HandleInput />
-        </article>
-      </Show>
+      <article>
+        <p>generate a new venn diagram!</p>
+        <HandleInput />
+      </article>
       <article>
         <h2>config</h2>
         <fieldset>
