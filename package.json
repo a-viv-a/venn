@@ -1,19 +1,14 @@
 {
   "name": "example-basic",
   "type": "module",
-  "scripts": {
-    "postinstall": "patch-package"
-  },
   "dependencies": {
     "@atproto/api": "^0.13.24",
-    "@resvg/resvg-wasm": "^2.6.2",
     "@solid-primitives/scheduled": "^1.4.4",
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.0.10",
     "@upsetjs/venn.js": "^1.4.2",
     "d3": "^7.9.0",
-    "nanoid": "^5.0.9",
     "solid-js": "^1.9.2",
     "vinxi": "^0.4.3"
   },
@@ -26,8 +21,6 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241230.0",
     "@types/d3": "^7.4.3",
-    "patch-package": "^8.0.0",
-    "vite-plugin-wasm-module-workers": "^0.0.2",
     "wrangler": "^3.99.0"
   }
 }

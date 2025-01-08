@@ -3,21 +3,11 @@ export PATH := "./node_modules/.bin:" + env_var('PATH')
 export COMPATIBILITY_DATE := \
     `sed -En 's/compatibility_date[[:space:]]*=[[:space:]]*"([^"]+)"/\1/p' wrangler.toml | head -1`
 
-patch *flags:
-    patch-package {{flags}}
-
 dev *flags:
     vinxi dev {{flags}}
 
-build: && postbuild
+build:
     vinxi build
-
-postbuild:
-    #!/usr/bin/env bash
-    for wasm in dist/assets/*.{wasm,wasm.br,wasm.gz}; do
-        echo cp dist/assests/$wasm dist/_build/assets
-        cp $wasm dist/_build/assets/
-    done
 
 prodconfig:
     sed -i 's/true/false/g' src/mode.ts
