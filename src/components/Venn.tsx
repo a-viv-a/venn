@@ -18,12 +18,11 @@ const subsets = <T,>(source: T[]) => function*() {
 }()
 
 const intersect = <T,>(sets: Set<T>[]) => {
-  while (sets.length > 2) {
-    const newSet = intersection(sets.pop()!, (sets.pop()!))
-    if (newSet.size === 0) return newSet
-    sets.push(newSet)
-  }
-  return sets[0]
+  if (sets.length < 2) return sets[0]
+  const newSet = intersection(sets.pop()!, (sets.pop()!))
+  if (newSet.size === 0) return newSet
+  sets.push(newSet)
+  return intersect(sets)
 }
 
 const computeSets = (data: Record<string, Set<string>>) => {
