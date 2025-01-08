@@ -11,7 +11,14 @@ dev *flags:
 
 build:
     vinxi build
-    cp dist/assets/*.{wasm,wasm.br,wasm.gz} dist/_build/assets/
+    just postbuild
+
+postbuild:
+    #!/bin/sh
+    for wasm in dist/assets/*.{wasm,wasm.br,wasm.gz}; do
+        echo cp dist/assests/$wasm dist/_build/assets
+        cp $wasm dist/_build/assets/
+    done
 
 prodconfig:
     sed -i 's/true/false/g' src/mode.ts
