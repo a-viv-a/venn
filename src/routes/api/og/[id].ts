@@ -35,9 +35,10 @@ export async function GET(event: APIEvent) {
     return new Response(null, { status: 400 })
   }
 
+  // WARN: this semicolon is load bearing
   const { default: resvgwasm } = await import(
     /* @vite-ignore */ `${RESVG_WASM}?module`
-  )
+  );
 
   try {
     if (!init) {
