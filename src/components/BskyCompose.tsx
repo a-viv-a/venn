@@ -13,7 +13,9 @@ export const BskyCompose: Component<{
   return <button aria-busy={busy()} onClick={async () => {
     setBusy(true)
     const url = `https://bsky.app/intent/compose?text=${encodeURIComponent(await props.postText())}`
-    window.open(url, "_blank")
+    if (!window.open(url, "_blank")) {
+      window.open(url)
+    }
     setBusy(false)
   }} disabled={props.disabled}><BskyMark />{" "}{props.message}</button>
 }
