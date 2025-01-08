@@ -1,16 +1,16 @@
 import { Meta, Title } from "@solidjs/meta";
 import { clientOnly } from "@solidjs/start"
 import { A, action, createAsync, json, useAction, useParams, useSearchParams } from "@solidjs/router";
-import { batch, createEffect, createMemo, createSignal, Show, untrack } from "solid-js";
+import { batch, createEffect, createMemo, createSignal, getOwner, Show, untrack } from "solid-js";
 import { getAuthorFeed, getFollowers, getFollows, getLikes, getProfile } from "~/agent";
 import { CompletableProgress, ShowRatio, SuspenseProgress } from "~/components/general";
 import { busy, createBskyCursor, createCursorMappingReduction } from "~/bsky";
-import { dbg, getLast, GetSetType, KeysOfType } from "~/utils";
+import { getLast, GetSetType, KeysOfType, signalAsPromise } from "~/utils";
 import { BskyCompose } from "~/components/BskyCompose";
 import { useEvent } from "~/server/serverUtils";
-import { IS_DEVELOPMENT } from "~/mode";
 import { HandleInput } from "~/components/HandleInput";
 import { getVennSVG } from "~/getVennSVG";
+import { IS_DEVELOPMENT } from "~/mode";
 
 const Venn = clientOnly(() => import("~/components/Venn"))
 
@@ -35,6 +35,7 @@ const storeSVGAction = action(async (svg: string) => {
 })
 
 export default function Handle() {
+  const owner = getOwner()
   const params = useParams<{ handle: string }>()
   const [searchParams, setSearchParams] = useSearchParams<{ og: string | string[] }>()
 
@@ -160,6 +161,12 @@ export default function Handle() {
           <Show when={!(busy(followers, follows, likes))}>
             <p>
               <BskyCompose message="share on bluesky!" disabled={rendering()} postText={async () => {
+                batch(() => {
+                  setShowDiagram(false)
+                  setRendering(true)
+                })
+                await signalAsPromise(() => !rendering(), owner)
+                if (IS_DEVELOPMENT) console.log("done rendering")
                 let queryParam = ""
                 const svg = getVennSVG()
                 if (IS_DEVELOPMENT) console.log({ svg })

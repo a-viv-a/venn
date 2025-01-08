@@ -1,4 +1,4 @@
-import { Accessor } from "solid-js"
+import { Accessor, createEffect, Owner, runWithOwner } from "solid-js"
 import { IS_DEVELOPMENT } from "./mode"
 
 export const narrow = <A, B extends A>(accessor: Accessor<A>, guard: (v: A) => v is B): B | null => {
@@ -17,6 +17,18 @@ export type KeysOfType<T, U> = keyof {
 export const getLast = <T>(v: T | T[]) => Array.isArray(v)
   ? v[v.length - 1]
   : v
+
+export const signalAsPromise = (signal: Accessor<boolean>, owner: typeof Owner) => {
+  const {promise, resolve} = Promise.withResolvers<void>()
+
+  runWithOwner(owner, () => createEffect(() => {
+    if (signal()) {
+      resolve()
+    }
+  }))
+
+  return promise
+}
 
 
 const dbgStore = new Map()
