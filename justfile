@@ -11,6 +11,7 @@ dev *flags:
 
 build:
     vinxi build
+    cp dist/assets/*.{wasm,wasm.br,wasm.gz} dist/_build/assets/
 
 prodconfig:
     sed -i 's/true/false/g' src/mode.ts
