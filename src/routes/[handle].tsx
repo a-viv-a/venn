@@ -157,9 +157,9 @@ export default function Handle() {
               if (untrack(rendering)) setRendering(false)
             }} />
           </Show>
-          <Show when={!busy(followers, follows, likes)}>
+          <Show when={!(busy(followers, follows, likes))}>
             <p>
-              <BskyCompose message="share on bluesky!" postText={async () => {
+              <BskyCompose message="share on bluesky!" disabled={rendering()} postText={async () => {
                 let queryParam = ""
                 const svg = getVennSVG()
                 if (IS_DEVELOPMENT) console.log({ svg })
@@ -176,10 +176,6 @@ export default function Handle() {
         </SuspenseProgress>
       </article>
       <article>
-        <p>generate a new venn diagram!</p>
-        <HandleInput />
-      </article>
-      <article>
         <h2>config</h2>
         <fieldset>
           <label>
@@ -191,6 +187,10 @@ export default function Handle() {
             setRendering(true)
           })} >rerender (fix visual issues)</button>
         </fieldset>
+      </article>
+      <article>
+        <p>generate a new venn diagram!</p>
+        <HandleInput />
       </article>
     </>
   );

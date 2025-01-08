@@ -5,7 +5,8 @@ const BskyMark: Component = props => <svg class={styles.icon} xmlns="http://www.
 
 export const BskyCompose: Component<{
   message: string,
-  postText: () => Promise<string>
+  postText: () => Promise<string>,
+  disabled?: boolean
 }> = props => {
   const [busy, setBusy] = createSignal(false)
 
@@ -14,5 +15,5 @@ export const BskyCompose: Component<{
     const url = `https://bsky.app/intent/compose?text=${encodeURIComponent(await props.postText())}`
     window.open(url, "_blank")
     setBusy(false)
-  }}><BskyMark />{" "}{props.message}</button>
+  }} disabled={props.disabled}><BskyMark />{" "}{props.message}</button>
 }
