@@ -53,18 +53,6 @@ export const union = <T>(a: Set<T>, b: Set<T>) =>
     : new Set(chain(a.keys(), b.keys()))
 
 
-export const withWindowOpen = (fn: (open: (href: string) => void) => Promise<void>) => () => {
-  const windowRef = window.open("/loading")
-  fn(href => {
-    if (windowRef === null) {
-      location.href = href
-      return
-    }
-    windowRef.location = href
-  })
-}
-
-
 const dbgStore = new Map()
 const makeDbg = (ctx: unknown = undefined, showCtx = false) => IS_DEVELOPMENT ? new Proxy({} as Record<string | symbol, unknown>, {
   set:
